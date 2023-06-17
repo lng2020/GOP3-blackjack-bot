@@ -11,10 +11,10 @@ import os
 import sys
 
 
-Validity_period='2023.04.05 23:54:57'#有效时间至
-VIP_period='2023.04.13 15:54:57'
-VIP2_period='2023.05.17 15:54:57'
-super_period='2025.03.25 00:00:00'
+Validity_period='2100.04.05 23:54:57'#有效时间至
+VIP_period='2100.04.13 15:54:57'
+VIP2_period='2100.05.17 15:54:57'
+super_period='2100.03.25 00:00:00'
 
 mVIP_period='ti5me+'
 mVIP2_period='EziR3f0G7OkxdWb4vh'
@@ -171,7 +171,7 @@ def Startupverification():#启动验证函数
           "(V1.151引入功能)自动领取双倍经验\n"
           "注意，请坐在中间位置以便脚本顺利捕获，建议选择“非公开牌局”\n"
           "目前参数适用1920*1080分辨率Windows电脑屏幕\n"
-          "开发者QQ:498887896\n")
+          "开发者QQ:\n")
     #获取当前屏幕的分辨率
     sda=pyautogui.size()
     mysize=(sda.width,sda.height)
