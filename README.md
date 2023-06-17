@@ -1,4 +1,4 @@
-# GOP3blackjack
+# GOP3blackjack挂机21点
 核心是使用pyautogui进行模拟点击
 
 各方面都很直观的一个挂机脚本程序
