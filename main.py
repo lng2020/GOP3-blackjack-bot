@@ -4,8 +4,9 @@ from cv2 import resize, matchTemplate, TM_CCOEFF_NORMED, imread, minMaxLoc
 from time import sleep
 from warnings import simplefilter
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QComboBox
+from PyQt5.QtGui import QColor
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 # Omit pyautogui warning
 simplefilter("ignore")
@@ -64,6 +65,8 @@ strategyTable3 = [
 handA = [range(895, 912), range(1028, 1040), range(744, 762)]
 handB = [range(939, 953), range(1072, 1084), range(789, 803)]
 
+betAmount = None
+max_loc = None
 
 def clickz(top_left):
     tagHalfW = int(twidth / 2)
@@ -86,39 +89,67 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Blackjack Bot')
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 600, 400)
 
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
-        self.bet_amount_label = QLabel('Bet Amount (in thousands):')
-        self.bet_amount_input = QLineEdit()
-        self.bet_amount_map = {'1': 1, '10': 10,
-                               '100': 100, '1000': 1000, '10000': 10000}
+        # Input Section
+        input_layout = QHBoxLayout()
+        self.bet_amount_label = QLabel('Bet Amount:')
+        self.bet_amount_input = QComboBox()
+        self.bet_amount_input.addItems(['1k', '2.5k', '5k', '10k', '25k', '50k', '100k', '200k', '500k', '1M', '2.5M', '5M', '10M', '25M', '50M', '100M'])
+        input_layout.addWidget(self.bet_amount_label)
+        input_layout.addWidget(self.bet_amount_input)
+        main_layout.addLayout(input_layout)
 
+        # Start Button
         self.start_button = QPushButton('Start')
         self.start_button.clicked.connect(self.start_program)
+        main_layout.addWidget(self.start_button)
 
-        layout.addWidget(self.bet_amount_label)
-        layout.addWidget(self.bet_amount_input)
-        layout.addWidget(self.start_button)
+        # Statistics Section
+        self.statistics_layout = QVBoxLayout()
+        self.total_games_label = QLabel('Total Games: 0')
+        self.total_wins_label = QLabel('Total Wins: 0')
+        self.statistics_layout.addWidget(self.total_games_label)
+        self.statistics_layout.addWidget(self.total_wins_label)
+        
+        # Graphical View
+        self.graph_view = QGraphicsView()
+        self.graph_scene = QGraphicsScene()
+        self.graph_view.setScene(self.graph_scene)
+        self.graph_view.setFixedHeight(200)
+        self.statistics_layout.addWidget(self.graph_view)
 
-        self.setLayout(layout)
+        # Combine layouts
+        main_layout.addLayout(self.statistics_layout)
+        self.setLayout(main_layout)
 
     def start_program(self):
-        global betAmount, betValue
-        betAmount = self.bet_amount_input.text()
-        betValue = self.bet_amount_map.get(betAmount)
+        global betAmount
+        betAmount = self.bet_amount_input.currentText()
 
         self.program_thread = ProgramThread()
+        self.program_thread.statUpdated.connect(self.update_stat)
         self.program_thread.start()
 
+    def update_stat(self, total_games, total_wins):
+        self.total_games_label.setText(f'Total Games: {total_games}')
+        self.total_wins_label.setText(f'Total Wins: {total_wins}')
+        self.update_graph(total_games, total_wins)
 
-max_loc = None
+    def update_graph(self, total_games, total_wins):
+        self.graph_scene.clear()
+        win_rate = total_wins / total_games * 100 if total_games > 0 else 0
+        bar_width = 100
+        bar_height = win_rate * 2  # Scale for visibility
+        bar_item = QGraphicsRectItem(0, 200 - bar_height, bar_width, bar_height)
+        bar_item.setBrush(QColor('green'))
+        self.graph_scene.addItem(bar_item)
 
 
 class ProgramThread(QThread):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    statUpdated = pyqtSignal(int, int)
 
     def compare(self, target, temp):
         global max_loc, twidth, theight
@@ -150,38 +181,37 @@ class ProgramThread(QThread):
         pyautogui.click(92, 52, button='left')
 
     def run(self):
-        global max_loc, numWins, numLosses, errors, unrecognizable, prevDealerCard, prevHandCard1, prevHandCard2, prevAction, prev2DealerCard, prev2HandCard1, prev2HandCard2, prev2Action
+        global max_loc
+
+        total_win = 0
+        total_lose = 0
+
         win = imread(r"image/win.png", 0)
         lose = imread(r"image/lose.png", 0)
 
-        numWins = 0
-        numLosses = 0
-        errors = 0
-        unrecognizable = 0
+        prev_dealer_card = -1
+        prev_hand_card_1 = -1
+        prev_hand_card_2 = -1
+        prev_action = -1
 
-        prevDealerCard = -1
-        prevHandCard1 = -1
-        prevHandCard2 = -1
-        prevAction = -1
-
-        prev2DealerCard = -1
-        prev2HandCard1 = -1
-        prev2HandCard2 = -1
-        prev2Action = -1
+        prev_2_dealer_card = -1
+        prev_2_hand_card_1 = -1
+        prev_2_hand_card_2 = -1
+        prev_2_action = -1
 
         while True:
             while True:
                 stand = imread(r"image/stand.png", 0)
-                bet = imread(r"image/bet/bet" + str(betValue) + "k.png", 0)
+                bet = imread(r"image/bet/bet" + betAmount + ".png", 0)
 
                 screenshot('image/screen.png')
                 temp = imread(r'image/screen.png', 0)
 
                 if self.compare(stand, temp) == 1:
-                    dealerCard = -1
-                    handCard1 = -1
-                    handCard2 = -1
-                    totalPoints = 0
+                    dealer_card = -1
+                    hand_card_1 = -1
+                    hand_card_2 = -1
+                    total_points = 0
                     tempheight, tempwidth = temp.shape[:2]
                     scaleTemp = resize(
                         temp, (int(tempwidth / screenScale), int(tempheight / screenScale)))
@@ -197,89 +227,90 @@ class ProgramThread(QThread):
                         mn_val, max_val, min_loc, max_loc = minMaxLoc(res)
 
                         if max_val >= 0.95:
-                            if max_loc[1] < 353 and dealerCard == -1:
+                            if max_loc[1] < 353 and dealer_card == -1:
                                 x1, y1, x2, y2 = max_loc[0], max_loc[1], max_loc[0] + \
                                     15, max_loc[1] + 15
                                 scaleTemp[y1:y2, x1:x2] = 0
-                                dealerCard = poke(i)
-                                prevDealerCard = dealerCard
+                                dealer_card = poke(i)
+                                prev_dealer_card = dealer_card
                                 i -= 1
-                            elif (max_loc[0] in [d1 for d2 in handA for d1 in d2]) and handCard1 == -1:
+                            elif (max_loc[0] in [d1 for d2 in handA for d1 in d2]) and hand_card_1 == -1:
                                 x1, y1, x2, y2 = max_loc[0], max_loc[1], max_loc[0] + \
                                     15, max_loc[1] + 15
                                 scaleTemp[y1:y2, x1:x2] = 0
-                                handCard1 = poke(i)
-                                prevHandCard1 = handCard1
-                                totalPoints += handCard1
+                                hand_card_1 = poke(i)
+                                prev_hand_card_1 = hand_card_1
+                                total_points += hand_card_1
                                 i -= 1
-                            elif (max_loc[0] in [d3 for d4 in handB for d3 in d4]) and handCard2 == -1:
+                            elif (max_loc[0] in [d3 for d4 in handB for d3 in d4]) and hand_card_2 == -1:
                                 x1, y1, x2, y2 = max_loc[0], max_loc[1], max_loc[0] + \
                                     15, max_loc[1] + 15
                                 scaleTemp[y1:y2, x1:x2] = 0
-                                handCard2 = poke(i)
-                                prevHandCard2 = handCard2
-                                totalPoints += handCard2
+                                hand_card_2 = poke(i)
+                                prev_hand_card_2 = hand_card_2
+                                total_points += hand_card_2
                                 i -= 1
-                        if totalPoints > 20:
-                            totalPoints = 20
+                        if total_points > 20:
+                            total_points = 20
 
-                    if handCard1 == -1 or handCard2 == -1 or dealerCard == -1:
+                    if hand_card_1 == -1 or hand_card_2 == -1 or dealer_card == -1:
                         continue
 
-                    if handCard1 == handCard2:  # Two hand cards are equal, use table 3
-                        temp = handCard1
-                        strategyTable = strategyTable3
-                    elif handCard1 == 11 or handCard2 == 11:  # Contains an Ace, use table 2
-                        if handCard1 == 11:
-                            temp = handCard2
-                        if handCard2 == 11:
-                            temp = handCard1
-                        strategyTable = strategyTable2
+                    if hand_card_1 == hand_card_2:  # Two hand cards are equal, use table 3
+                        temp = hand_card_1
+                        strategy_table = strategyTable3
+                    elif hand_card_1 == 11 or hand_card_2 == 11:  # Contains an Ace, use table 2
+                        if hand_card_1 == 11:
+                            temp = hand_card_2
+                        if hand_card_2 == 11:
+                            temp = hand_card_1
+                        strategy_table = strategyTable2
                     else:  # Other situations, use table 1
-                        temp = totalPoints - 3
-                        strategyTable = strategyTable1
-                    if strategyTable[temp - 2][dealerCard - 2] == 'S':  # Stand
+                        temp = total_points - 3
+                        strategy_table = strategyTable1
+                    if strategy_table[temp - 2][dealer_card - 2] == 'S':  # Stand
                         position = (852, 969)
                         clickz(position)
-                        prevAction = 'S'
+                        prev_action = 'S'
                         sleep(0.9)
-                    elif strategyTable[temp - 2][dealerCard - 2] == 'H':  # Hit
+                    elif strategy_table[temp - 2][dealer_card - 2] == 'H':  # Hit
                         position = (594, 967)
                         clickz(position)
-                        prevAction = 'H'
+                        prev_action = 'H'
                         sleep(1.6)
                         clickz((854, 969))
-                    elif strategyTable[temp - 2][dealerCard - 2] == 'D':  # Double
+                    elif strategy_table[temp - 2][dealer_card - 2] == 'D':  # Double
                         position = (1123, 969)
-                        prevAction = 'D'
+                        prev_action = 'D'
                         clickz(position)
                         sleep(0.6)
-                    elif strategyTable[temp - 2][dealerCard - 2] == 'P':  # Split
+                    elif strategy_table[temp - 2][dealer_card - 2] == 'P':  # Split
                         position = (1373, 969)
                         clickz(position)
-                        prevAction = 'P'
+                        prev_action = 'P'
                         sleep(0.6)
                 elif self.compare(bet, temp) == 1:
                     top_left = max_loc
                     clickz(top_left)
                     sleep(0.01)
                 elif self.compare(win, temp) == 1:
-                    if [prev2DealerCard, prev2HandCard1, prev2HandCard2, prev2Action] == [prevDealerCard, prevHandCard1, prevHandCard2, prevAction]:
+                    total_win += 1
+                    self.statUpdated.emit(total_win + total_lose, total_win)
+                    if [prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action] == [prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action]:
                         continue
-                    numWins += 1
-                    prev2DealerCard, prev2HandCard1, prev2HandCard2, prev2Action = prevDealerCard, prevHandCard1, prevHandCard2, prevAction
+                    prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action = prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action
                     sleep(2)
 
                 elif self.compare(lose, temp) == 1:
-                    if [prev2DealerCard, prev2HandCard1, prev2HandCard2, prev2Action] == [prevDealerCard, prevHandCard1, prevHandCard2, prevAction]:
+                    total_lose += 1
+                    self.statUpdated.emit(total_win + total_lose, total_win)
+                    if [prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action] == [prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action]:
                         continue
-                    numLosses += 1
-                    prev2DealerCard, prev2HandCard1, prev2HandCard2, prev2Action = prevDealerCard, prevHandCard1, prevHandCard2, prevAction
+                    prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action = prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action
                     sleep(2)
                 else:
                     sleep(0.2)
             self.handleUnfocused()
-
 
 if __name__ == '__main__':
     app = QApplication([])
