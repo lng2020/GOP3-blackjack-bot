@@ -3,7 +3,6 @@ from pyscreeze import screenshot
 from cv2 import resize,matchTemplate,TM_CCOEFF_NORMED,imread,minMaxLoc
 from sys import exit
 from time import sleep,time
-from urllib.request import urlopen 
 from warnings import simplefilter
 import os
 import sys
