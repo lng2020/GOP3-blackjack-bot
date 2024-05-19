@@ -58,22 +58,16 @@ CHEAT_SHEET = {
     ('A,A', '2'): "split", ('A,A', '3'): "split", ('A,A', '4'): "split", ('A,A', '5'): "split", ('A,A', '6'): "split", ('A,A', '7'): "split", ('A,A', '8'): "split", ('A,A', '9'): "split", ('A,A', '10'): "stand", ('A,A', 'A'): "split",
 }
 
+NUMBER = ['a', '2', '3', '4', '5', '6', '7', '8', '9', 't', 'j', 'q', 'k']
+
+COLOR = ['c', 'd', 'h', 's']
+
 def clickz(top_left, height, width):
     tag_half_width = int(width / 2)
     tag_half_height = int(height / 2)
     tag_center_x = top_left[0] + tag_half_width
     tag_center_y = top_left[1] + tag_half_height
     pyautogui.click(tag_center_x, tag_center_y, button='left')
-
-
-def poke(h):
-    if (h % 13 >= 10 and h % 13 <= 13) or h % 13 == 0:
-        return '10' 
-    elif h % 13 == 1:
-        return 'A'
-    else:
-        return str(h % 13)
-
 
 class App(QWidget):
     def __init__(self):
@@ -164,69 +158,103 @@ class ProgramThread(QThread):
                 print("First round")
                 # which means it's the first round
                 # in first round, we should only have 2 cards
-                dealer_card = -1
-                first_card = -1
-                second_card = -1
-
-                for i in range(1, 53):
-                    target = imread(r'image/card/' + str(i) + '.png', 0)
-                    res = matchTemplate(
-                        screen, target, TM_CCOEFF_NORMED)
-                    _, val, _, loc = minMaxLoc(res)
-                    print(i, val, loc)
-                    if val >= 0.95:
-                        # magic number to determine the position of the card
-                        if loc[1] < 353 and dealer_card == -1:
-                            dealer_card = poke(i)
-                            print("Dealer card")
-                        elif (loc[0] in [d1 for d2 in handA for d1 in d2]) and first_card == -1:
-                            first_card = poke(i)
-                            print("first card")
-                        elif (loc[0] in [d3 for d4 in handB for d3 in d4]) and second_card == -1:
-                            second_card = poke(i)
-                            print("second card")
-                if first_card or second_card or dealer_card == -1:
-                    print("Error")
+                first_card = ''
+                second_card = ''
+                dealer_card = ''
+                for num in NUMBER:
+                    for col in COLOR:
+                        card_name = col + num
+                        target = imread(r'image/card/' + card_name + '.png', 0)
+                        res = matchTemplate(
+                            screen, target, TM_CCOEFF_NORMED)
+                        _, val, _, loc = minMaxLoc(res)
+                        print(card_name, val, loc)
+                        if val >= 0.95:
+                            # magic number to determine the position of the card
+                            if loc[1] < 353 and dealer_card == '':
+                                dealer_card = card_name
+                                print("Dealer card: ", dealer_card)
+                            elif (loc[0] in [d1 for d2 in handA for d1 in d2]) and first_card == '':
+                                first_card = card_name
+                                print("first card: ", first_card)
+                            elif (loc[0] in [d3 for d4 in handB for d3 in d4]) and second_card == '':
+                                second_card = card_name
+                                print("second card: ", second_card)
+                if '' in  [first_card, second_card, dealer_card]:
+                    print("Error: Cannot find cards")
                     continue
-                if 'A' in [first_card, second_card]:
-                    hand = 'A,' + str(max([int(first_card), int(second_card)]))
-                elif first_card == second_card:
-                    hand = str(int(first_card)) + ',' + str(int(second_card))
+                if first_card[1] in ['t', 'j', 'q', 'k']:
+                    first_card = '10'
+                elif first_card[1] == 'a':
+                    first_card = 'A'
                 else:
-                    hand = str(int(first_card) + int(second_card))
-                strategy = CHEAT_SHEET[(hand, dealer_card)]
-                print(hand, dealer_card, strategy)
+                    first_card = first_card[1]
+                if second_card[1] in ['t', 'j', 'q', 'k']:
+                    second_card = '10'
+                elif second_card[1] == 'a':
+                    second_card = 'A'
+                else:
+                    second_card = second_card[1]
+                card_suit = ''
+                strategy = ''
+                if first_card == second_card:
+                    card_suit = first_card + ',' + second_card
+                elif 'A' in [first_card, second_card]:
+                    card_suit = 'A' + ',' + first_card if second_card == 'A' else 'A' + ',' + second_card
+                else:
+                    card_suit = str(int(first_card) + int(second_card))
+                    if int(card_suit) > 17:
+                        strategy = 'stand'
+                if dealer_card[1] in ['t', 'j', 'q', 'k']:
+                    dealer_card = '10'
+                elif dealer_card[1] == 'a':
+                    dealer_card = 'A'
+                else:
+                    dealer_card = dealer_card[1]
+                if strategy == '':
+                    strategy = CHEAT_SHEET[(card_suit, dealer_card)]
+                print(card_suit, dealer_card, strategy)
                 clickz(OP_POS[strategy], 5, 5)
             elif self.compare(stand, screen) is True:
                 print("Second round")
                 # which means it's the second round
                 # in second round, we could have mulitple cards
-                dealer_card = -1
+                dealer_card = ''
                 total_points = 0
 
-                for i in range(1, 53):
-                    target = imread(r'image/card/' + str(i) + '.png', 0)
-                    res = matchTemplate(
-                        screen, target, TM_CCOEFF_NORMED)
-                    _, max_val, _, loc = minMaxLoc(res)
-                    if max_val >= 0.95:
-                        # magic number to determine the position of the card
-                        if loc[1] < 353 and dealer_card == -1:
-                            dealer_card = poke(i)
-                            print("Dealer card")
-                        else:
-                            card = poke(i)
-                            if card == 'A':
-                                total_points += 11
-                            elif card in ['J', 'Q', 'K']:
-                                total_points += 10
+                for num in NUMBER:
+                    for col in COLOR:
+                        card_name = col + num
+                        target = imread(r'image/card/' + card_name + '.png', 0)
+                        res = matchTemplate(
+                            screen, target, TM_CCOEFF_NORMED)
+                        _, max_val, _, loc = minMaxLoc(res)
+                        if max_val >= 0.95:
+                            # magic number to determine the position of the card
+                            if loc[1] < 353 and dealer_card == '':
+                                dealer_card = card_name
+                                print("Dealer card: ", dealer_card)
                             else:
-                                total_points += int(card)
-                if total_points > 21:
+                                if card_name[1] in ['t', 'j', 'q', 'k']:
+                                    total_points += 10
+                                elif card_name[1] == 'a':
+                                    total_points += 11
+                                else:
+                                    total_points += int(card_name[1])
+                if dealer_card == '':
+                    print("Error: Cannot find dealer card")
+                    continue
+                elif dealer_card[1] in ['t', 'j', 'q', 'k']:
+                    dealer_card = '10'
+                elif dealer_card[1] == 'a':
+                    dealer_card = 'A'
+                else:
+                    dealer_card = dealer_card[0]
+                if total_points > 17:
                     strategy = 'stand'
                 else:
-                    strategy = CHEAT_SHEET[(hand, dealer_card)]
-                print(hand, dealer_card, strategy)
+                    strategy = CHEAT_SHEET[(str(total_points), dealer_card)]
+                print(str(total_points), dealer_card, strategy)
                 clickz(OP_POS[strategy], 5, 5)
             elif self.compare(bet, screen) is True:
                 print("Betting")
@@ -240,6 +268,7 @@ class ProgramThread(QThread):
                 print("Lose")
                 total_lose += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
+        clickz((1920/2, 1080/2), 5, 5)
         sleep(0.520)
 
 if __name__ == '__main__':
