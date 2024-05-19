@@ -4,21 +4,11 @@ from cv2 import resize,matchTemplate,TM_CCOEFF_NORMED,imread,minMaxLoc
 from sys import exit
 from time import sleep,time
 from urllib.request import urlopen 
-from bs4 import BeautifulSoup as bs
-#V1.17(减少打包大小)
 from warnings import simplefilter
 import os
 import sys
 
 
-Validity_period='2100.04.05 23:54:57'#有效时间至
-VIP_period='2100.04.13 15:54:57'
-VIP2_period='2100.05.17 15:54:57'
-super_period='2100.03.25 00:00:00'
-
-mVIP_period='ti5me+'
-mVIP2_period='EziR3f0G7OkxdWb4vh'
-msuper_period='asd34sdfc4b4s'
 #这两行忽略了oyautogui的安全警告
 simplefilter("ignore")
 pyautogui.FAILSAFE = False
@@ -67,46 +57,6 @@ list3=(['P','P','P','P','P','P','H','H','H','H'],#Pair2,H=要牌，D=加倍，S=
 handA=[range(895,912),range(1028,1040),range(744,762)]
 handB=[range(939,953),range(1072,1084),range(789,803)]
 
-def timelock(s):#时间锁
-    while True:
-        try:
-            r = urlopen("https://www.boc.cn/sourcedb/whpj/")#启动网页
-            #print(r.getcode())#服务器请求返回码，显示200为正常
-            c = r.read()#读取网页
-            bs_obj = bs(c,"html.parser")#bs4使用解析器的解释链接https://zhuanlan.zhihu.com/p/128484144 解析网页内容获取网页全部代码html方式
-            t = bs_obj.find_all("table")[1]#查找网页代码中<table>标签下的所有内容，清除下面注释查看
-            # print(t)
-            all_tr = t.find_all("tr")#查找网页代码中<tr>标签下的所有内容
-            all_tr.pop(0) #删除第一个元素。实际效果为忽略掉标题栏，之后分析数据内容
-            r=all_tr.pop(0)
-            all_td = r.find_all("td")#获取<td>标签内的全部内容
-            now=str(all_td[6].text)
-            print("网络连线正常",now)
-            break
-        except :
-            now='2000.00.00 00:00:00'
-            print("请检查自己的网络连接情况")
-            for i in range(5):
-                print("程序已锁定，请联网后重启")
-                time.sleep(5)
-                if(i==4):
-                    break
-    
-    
-
-    
-    print("当前时间的附近值为",now)
-    print("将于"+s+"后不可使用")
-    if (now>s):
-        print('已过期,无法正常使用')
-        for i in range(5):
-            print("程序已锁定，请获取时长后重启")
-            sleep(5)
-            if(i==4):
-                exit()
-    else:
-        print('可使用状态已确认,准备启动')
-        sleep(1)
 def compare(target,temp):
 
     global max_loc,twidth,theight
@@ -210,29 +160,24 @@ if len(lines) > 10000:
         f.write('')
 betnum=input("在此输入默认下注额度：（1k请按1，2.5k按2，5k按3，10k按4，25k按5，50k按6，100k按7，200k按8，500k按9，1M按10，2.5M按11，5M按12，10M按13，20M按14，50M按15，100M按16）\n"
                  "请输入：\n")
-timelockNo=0
 #密钥解锁时长
 if betnum=='ti6me+':
-    timelockNo=VIP_period#检测联网和有效时间
     betnum=input("再次输入下注额度:\n")
     if int(betnum)  not in range(1,17):
         exit()
     betNo=bets(betnum)
 
 elif betnum=='EziR3f0G7OkxdWb4vh':
-    timelockNo=VIP2_period#检测联网和有效时间
     betnum=input("再次输入下注额度:\n")
     if int(betnum)  not in range(1,17):
         exit()
     betNo=bets(betnum)
 elif betnum=='asd34556f3h3sdfc4b4s':
-    timelockNo=super_period#检测联网和有效时间
     betnum=input("再次输入下注额度:\n")
     if int(betnum)  not in range(1,17):
         exit()
     betNo=bets(betnum)
 elif int(betnum) in range(1,17):
-    timelockNo=Validity_period#检测联网和有效时间
     betNo=bets(betnum)
 else:exit()
 
@@ -254,7 +199,6 @@ S2Dir,S2hand1,S2hand2,S2dp=-1,-1,-1,-1
 
 while True:
     start_time = time()
-    timelock(timelockNo)
     getouttimes=0
     current_time1=0
     while True:#反复检测下注和停牌按钮
