@@ -1,0 +1,4 @@
+pyautogui
+pyscreeze
+opencv-python
+PyQt5
