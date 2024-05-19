@@ -145,42 +145,17 @@ def unfcs():
         sleep(3)
         return 0
     pyautogui.click(92,52,button='left')
-def bets(s):
-    betz={'1':1,'2':2.5,'3':5,'4':10,'5':25,'6':50,'7':100,'8':200,'9':500,'10':1000,'11':2500,'12':5000,'13':10000,'14':20000,'15':50000,'16':100000}
-    return betz[s]
     
 Startupverification()  
-# 打开文件，并读取其中的行数
+
+if not os.path.isfile('data.txt'):
+    open('data.txt', 'w').close()
+
 with open('data.txt', 'r') as f:
     lines = f.readlines()
 
-# 如果行数超过1000，就清空文件
-if len(lines) > 10000:
-    with open('data.txt', 'w') as f:
-        f.write('')
 betnum=input("在此输入默认下注额度：（1k请按1，2.5k按2，5k按3，10k按4，25k按5，50k按6，100k按7，200k按8，500k按9，1M按10，2.5M按11，5M按12，10M按13，20M按14，50M按15，100M按16）\n"
                  "请输入：\n")
-#密钥解锁时长
-if betnum=='ti6me+':
-    betnum=input("再次输入下注额度:\n")
-    if int(betnum)  not in range(1,17):
-        exit()
-    betNo=bets(betnum)
-
-elif betnum=='EziR3f0G7OkxdWb4vh':
-    betnum=input("再次输入下注额度:\n")
-    if int(betnum)  not in range(1,17):
-        exit()
-    betNo=bets(betnum)
-elif betnum=='asd34556f3h3sdfc4b4s':
-    betnum=input("再次输入下注额度:\n")
-    if int(betnum)  not in range(1,17):
-        exit()
-    betNo=bets(betnum)
-elif int(betnum) in range(1,17):
-    betNo=bets(betnum)
-else:exit()
-
 print("您将以",betNo,"k持续下注,码空后停止")
 print("已开始运行，请启动")
 hit=imread(r"image/hit.png",0)
