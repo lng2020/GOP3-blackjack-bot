@@ -12,73 +12,67 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 simplefilter("ignore")
 pyautogui.FAILSAFE = False
 
-# Strategy tables
-strategyTable1 = [
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  # 5
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  # 6
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  # 7
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],  # 8
-    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],  # 9
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],  # 10
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],  # 11
-    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],  # 12
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],  # 13
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],  # 14
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'S', 'H'],  # 15
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'S', 'S', 'H'],  # 16
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # 17
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # 18
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # 19
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # 20
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # 21
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # 22
-]  # From left to right, dealer's cards are 2, 3, 4, 5, 6, 7, 8, 9, T, A
-
-strategyTable2 = [
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],  # A2
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],  # A3
-    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],  # A4
-    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],  # A5
-    ['S', 'D', 'D', 'D', 'D', 'S', 'S', 'S', 'H', 'H'],  # A6
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # A7
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # A8
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # A9
-]
-
-strategyTable3 = [
-    ['P', 'P', 'P', 'P', 'P', 'P', 'H', 'H', 'H', 'H'],  # Pair2
-    ['P', 'P', 'P', 'P', 'P', 'P', 'H', 'H', 'H', 'H'],  # Pair3
-    ['H', 'H', 'H', 'P', 'P', 'P', 'H', 'H', 'H', 'H'],  # Pair4
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],  # Pair5
-    ['P', 'P', 'P', 'P', 'P', 'H', 'H', 'H', 'H', 'H'],  # Pair6
-    ['P', 'P', 'P', 'P', 'P', 'P', 'H', 'H', 'H', 'H'],  # Pair7
-    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'S', 'H'],  # Pair8
-    ['P', 'P', 'P', 'P', 'P', 'S', 'P', 'P', 'S', 'S'],  # Pair9
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],  # PairT
-    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'H'],  # PairA
-]
-
 # Hand card positions
 handA = [range(895, 912), range(1028, 1040), range(744, 762)]
 handB = [range(939, 953), range(1072, 1084), range(789, 803)]
 
 max_loc = None
 
-def clickz(top_left):
-    tagHalfW = int(twidth / 2)
-    tagHalfH = int(theight / 2)
-    tagCenterX = top_left[0] + tagHalfW
-    tagCenterY = top_left[1] + tagHalfH
-    pyautogui.click(tagCenterX, tagCenterY, button='left')
+OP_POS = {
+    'stand': (852, 969),
+    'hit': (594, 967),
+    'double': (1123, 969),
+    'split': (1373, 969),
+}
+
+CHEAT_SHEET = {
+    ('8', '2'): "hit", ('8', '3'): "hit", ('8', '4'): "hit", ('8', '5'): "hit", ('8', '6'): "hit", ('8', '7'): "hit", ('8', '8'): "hit", ('8', '9'): "hit", ('8', '10'): "hit", ('8', 'A'): "hit",
+    ('9', '2'): "hit", ('9', '3'): "double", ('9', '4'): "double", ('9', '5'): "double", ('9', '6'): "double", ('9', '7'): "hit", ('9', '8'): "hit", ('9', '9'): "hit", ('9', '10'): "hit", ('9', 'A'): "hit",
+    ('10', '2'): "double", ('10', '3'): "double", ('10', '4'): "double", ('10', '5'): "double", ('10', '6'): "double", ('10', '7'): "double", ('10', '8'): "double", ('10', '9'): "double", ('10', '10'): "hit", ('10', 'A'): "hit",
+    ('11', '2'): "double", ('11', '3'): "double", ('11', '4'): "double", ('11', '5'): "double", ('11', '6'): "double", ('11', '7'): "double", ('11', '8'): "double", ('11', '9'): "double", ('11', '10'): "double", ('11', 'A'): "double",
+    ('12', '2'): "hit", ('12', '3'): "hit", ('12', '4'): "stand", ('12', '5'): "stand", ('12', '6'): "stand", ('12', '7'): "hit", ('12', '8'): "hit", ('12', '9'): "hit", ('12', '10'): "hit", ('12', 'A'): "hit",
+    ('13', '2'): "stand", ('13', '3'): "stand", ('13', '4'): "stand", ('13', '5'): "stand", ('13', '6'): "stand", ('13', '7'): "hit", ('13', '8'): "hit", ('13', '9'): "hit", ('13', '10'): "hit", ('13', 'A'): "hit",
+    ('14', '2'): "stand", ('14', '3'): "stand", ('14', '4'): "stand", ('14', '5'): "stand", ('14', '6'): "stand", ('14', '7'): "hit", ('14', '8'): "hit", ('14', '9'): "hit", ('14', '10'): "hit", ('14', 'A'): "hit",
+    ('15', '2'): "stand", ('15', '3'): "stand", ('15', '4'): "stand", ('15', '5'): "stand", ('15', '6'): "stand", ('15', '7'): "hit", ('15', '8'): "hit", ('15', '9'): "hit", ('15', '10'): "hit", ('15', 'A'): "hit",
+    ('16', '2'): "stand", ('16', '3'): "stand", ('16', '4'): "stand", ('16', '5'): "stand", ('16', '6'): "stand", ('16', '7'): "hit", ('16', '8'): "hit", ('16', '9'): "hit", ('16', '10'): "hit", ('16', 'A'): "hit",
+    ('17', '2'): "stand", ('17', '3'): "stand", ('17', '4'): "stand", ('17', '5'): "stand", ('17', '6'): "stand", ('17', '7'): "stand", ('17', '8'): "stand", ('17', '9'): "stand", ('17', '10'): "stand", ('17', 'A'): "stand",
+    ('A,2', '2'): "hit", ('A,2', '3'): "hit", ('A,2', '4'): "hit", ('A,2', '5'): "double", ('A,2', '6'): "double", ('A,2', '7'): "hit", ('A,2', '8'): "hit", ('A,2', '9'): "hit", ('A,2', '10'): "hit", ('A,2', 'A'): "hit",
+    ('A,3', '2'): "hit", ('A,3', '3'): "hit", ('A,3', '4'): "hit", ('A,3', '5'): "double", ('A,3', '6'): "double", ('A,3', '7'): "hit", ('A,3', '8'): "hit", ('A,3', '9'): "hit", ('A,3', '10'): "hit", ('A,3', 'A'): "hit",
+    ('A,4', '2'): "hit", ('A,4', '3'): "hit", ('A,4', '4'): "double", ('A,4', '5'): "double", ('A,4', '6'): "double", ('A,4', '7'): "hit", ('A,4', '8'): "hit", ('A,4', '9'): "hit", ('A,4', '10'): "hit", ('A,4', 'A'): "hit",
+    ('A,5', '2'): "hit", ('A,5', '3'): "hit", ('A,5', '4'): "double", ('A,5', '5'): "double", ('A,5', '6'): "double", ('A,5', '7'): "hit", ('A,5', '8'): "hit", ('A,5', '9'): "hit", ('A,5', '10'): "hit", ('A,5', 'A'): "hit",
+    ('A,6', '2'): "hit", ('A,6', '3'): "hit", ('A,6', '4'): "double", ('A,6', '5'): "double", ('A,6', '6'): "double", ('A,6', '7'): "hit", ('A,6', '8'): "hit", ('A,6', '9'): "hit", ('A,6', '10'): "hit", ('A,6', 'A'): "hit",
+    ('A,7', '2'): "stand", ('A,7', '3'): "stand", ('A,7', '4'): "stand", ('A,7', '5'): "stand", ('A,7', '6'): "stand", ('A,7', '7'): "stand", ('A,7', '8'): "stand", ('A,7', '9'): "stand", ('A,7', '10'): "stand", ('A,7', 'A'): "stand",
+    ('A,8', '2'): "stand", ('A,8', '3'): "stand", ('A,8', '4'): "stand", ('A,8', '5'): "stand", ('A,8', '6'): "stand", ('A,8', '7'): "stand", ('A,8', '8'): "stand", ('A,8', '9'): "stand", ('A,8', '10'): "stand", ('A,8', 'A'): "stand",
+    ('A,9', '2'): "stand", ('A,9', '3'): "stand", ('A,9', '4'): "stand", ('A,9', '5'): "stand", ('A,9', '6'): "stand", ('A,9', '7'): "stand", ('A,9', '8'): "stand", ('A,9', '9'): "stand", ('A,9', '10'): "stand", ('A,9', 'A'): "stand",
+    ('A,10', '2'): "stand", ('A,10', '3'): "stand", ('A,10', '4'): "stand", ('A,10', '5'): "stand", ('A,10', '6'): "stand", ('A,10', '7'): "stand", ('A,10', '8'): "stand", ('A,10', '9'): "stand", ('A,10', '10'): "stand", ('A,10', 'A'): "stand",
+    ('A,A', '2'): "split", ('A,A', '3'): "split", ('A,A', '4'): "split", ('A,A', '5'): "split", ('A,A', '6'): "split", ('A,A', '7'): "split", ('A,A', '8'): "split", ('A,A', '9'): "split", ('A,A', '10'): "stand", ('A,A', 'A'): "split",
+    ('2,2', '2'): "split", ('2,2', '3'): "split", ('2,2', '4'): "hit", ('2,2', '5'): "hit", ('2,2', '6'): "hit", ('2,2', '7'): "split", ('2,2', '8'): "split", ('2,2', '9'): "hit", ('2,2', '10'): "hit", ('2,2', 'A'): "hit",
+    ('3,3', '2'): "split", ('3,3', '3'): "split", ('3,3', '4'): "hit", ('3,3', '5'): "hit", ('3,3', '6'): "hit", ('3,3', '7'): "split", ('3,3', '8'): "split", ('3,3', '9'): "hit", ('3,3', '10'): "hit", ('3,3', 'A'): "hit",
+    ('4,4', '2'): "hit", ('4,4', '3'): "hit", ('4,4', '4'): "hit", ('4,4', '5'): "hit", ('4,4', '6'): "hit", ('4,4', '7'): "hit", ('4,4', '8'): "hit", ('4,4', '9'): "hit", ('4,4', '10'): "hit", ('4,4', 'A'): "hit",
+    ('5,5', '2'): "double", ('5,5', '3'): "double", ('5,5', '4'): "double", ('5,5', '5'): "double", ('5,5', '6'): "double", ('5,5', '7'): "double", ('5,5', '8'): "double", ('5,5', '9'): "double", ('5,5', '10'): "hit", ('5,5', 'A'): "hit",
+    ('6,6', '2'): "split", ('6,6', '3'): "split", ('6,6', '4'): "hit", ('6,6', '5'): "hit", ('6,6', '6'): "split", ('6,6', '7'): "split", ('6,6', '8'): "hit", ('6,6', '9'): "hit", ('6,6', '10'): "hit", ('6,6', 'A'): "hit",
+    ('7,7', '2'): "split", ('7,7', '3'): "split", ('7,7', '4'): "split", ('7,7', '5'): "split", ('7,7', '6'): "split", ('7,7', '7'): "hit", ('7,7', '8'): "hit", ('7,7', '9'): "hit", ('7,7', '10'): "hit", ('7,7', 'A'): "hit",
+    ('8,8', '2'): "split", ('8,8', '3'): "split", ('8,8', '4'): "split", ('8,8', '5'): "split", ('8,8', '6'): "split", ('8,8', '7'): "split", ('8,8', '8'): "split", ('8,8', '9'): "split", ('8,8', '10'): "split", ('8,8', 'A'): "split",
+    ('9,9', '2'): "split", ('9,9', '3'): "split", ('9,9', '4'): "split", ('9,9', '5'): "split", ('9,9', '6'): "split", ('9,9', '7'): "stand", ('9,9', '8'): "split", ('9,9', '9'): "split", ('9,9', '10'): "stand", ('9,9', 'A'): "stand",
+    ('10,10', '2'): "stand", ('10,10', '3'): "stand", ('10,10', '4'): "stand", ('10,10', '5'): "stand", ('10,10', '6'): "stand", ('10,10', '7'): "stand", ('10,10', '8'): "stand", ('10,10', '9'): "stand", ('10,10', '10'): "stand", ('10,10', 'A'): "stand",
+    ('A,A', '2'): "split", ('A,A', '3'): "split", ('A,A', '4'): "split", ('A,A', '5'): "split", ('A,A', '6'): "split", ('A,A', '7'): "split", ('A,A', '8'): "split", ('A,A', '9'): "split", ('A,A', '10'): "stand", ('A,A', 'A'): "split",
+}
+
+def clickz(top_left, height, width):
+    tag_half_width = int(width / 2)
+    tag_half_height = int(height / 2)
+    tag_center_x = top_left[0] + tag_half_width
+    tag_center_y = top_left[1] + tag_half_height
+    pyautogui.click(tag_center_x, tag_center_y, button='left')
 
 
 def poke(h):
     if (h % 13 >= 10 and h % 13 <= 13) or h % 13 == 0:
-        return 10
+        return '10' 
     elif h % 13 == 1:
-        return 11
+        return 'A'
     else:
-        return h % 13
+        return str(h % 13)
 
 
 class App(QWidget):
@@ -117,8 +111,8 @@ class App(QWidget):
         self.setLayout(main_layout)
 
     def start_program(self):
-        betAmount = self.bet_amount_input.currentText()
-        self.program_thread = ProgramThread(betAmount)
+        bet_amount = self.bet_amount_input.currentText()
+        self.program_thread = ProgramThread(bet_amount)
         self.program_thread.statUpdated.connect(self.update_stat)
         self.program_thread.start()
 
@@ -140,154 +134,113 @@ class App(QWidget):
 class ProgramThread(QThread):
     statUpdated = pyqtSignal(int, int)
 
-    def __init__(self, betAmount):
+    def __init__(self, bet_amount):
         super().__init__()
-        self.betAmount = betAmount
+        self.bet_amount = bet_amount
         
-    def compare(self, target, temp):
-        global max_loc, twidth, theight
-        theight, twidth = target.shape[:2]
-        tempheight, tempwidth = temp.shape[:2]
-        scaleTemp = resize(
-            temp, (int(tempwidth), int(tempheight)))
-
-        res = matchTemplate(scaleTemp, target, TM_CCOEFF_NORMED)
-        mn_val, max_val, min_loc, max_loc = minMaxLoc(res)
-
-        if max_val >= 0.9:
-            return 1
-        else:
-            return 0
+    def compare(self, target, screen):
+        global max_loc
+        res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
+        _, val, _, max_loc = minMaxLoc(res)
+        return True if val >= 0.9 else False
 
     def run(self):
         global max_loc
-
         total_win = 0
         total_lose = 0
 
         win = imread(r"image/win.png", 0)
         lose = imread(r"image/lose.png", 0)
-
-        prev_dealer_card = -1
-        prev_hand_card_1 = -1
-        prev_hand_card_2 = -1
-        prev_action = -1
-
-        prev_2_dealer_card = -1
-        prev_2_hand_card_1 = -1
-        prev_2_hand_card_2 = -1
-        prev_2_action = -1
+        stand = imread(r"image/stand.png", 0)
+        double = imread(r"image/double.png", 0)
+        bet = imread(r"image/bet/bet" + self.bet_amount + ".png", 0)
 
         while True:
-            stand = imread(r"image/stand.png", 0)
-            bet = imread(r"image/bet/bet" + self.betAmount + ".png", 0)
-
             screenshot('image/screen.png')
-            temp = imread(r'image/screen.png', 0)
+            screen = imread(r'image/screen.png', 0)
+            screen = resize(screen, (1920, 1080))
 
-            if self.compare(stand, temp) == 1:
+            if self.compare(double, screen) is True:
+                print("First round")
+                # which means it's the first round
+                # in first round, we should only have 2 cards
                 dealer_card = -1
-                hand_card_1 = -1
-                hand_card_2 = -1
-                total_points = 0
-                tempheight, tempwidth = temp.shape[:2]
-                scaleTemp = resize(
-                    temp, (int(tempwidth), int(tempheight)))
+                first_card = -1
+                second_card = -1
 
-                i = 0
-                while i < 52:
-                    i += 1
+                for i in range(1, 53):
                     target = imread(r'image/card/' + str(i) + '.png', 0)
-                    theight, twidth = target.shape[:2]
-
                     res = matchTemplate(
-                        scaleTemp, target, TM_CCOEFF_NORMED)
-                    mn_val, max_val, min_loc, max_loc = minMaxLoc(res)
-
-                    if max_val >= 0.95:
-                        if max_loc[1] < 353 and dealer_card == -1:
-                            x1, y1, x2, y2 = max_loc[0], max_loc[1], max_loc[0] + \
-                                15, max_loc[1] + 15
-                            scaleTemp[y1:y2, x1:x2] = 0
+                        screen, target, TM_CCOEFF_NORMED)
+                    _, val, _, loc = minMaxLoc(res)
+                    print(i, val, loc)
+                    if val >= 0.95:
+                        # magic number to determine the position of the card
+                        if loc[1] < 353 and dealer_card == -1:
                             dealer_card = poke(i)
-                            prev_dealer_card = dealer_card
-                            i -= 1
-                        elif (max_loc[0] in [d1 for d2 in handA for d1 in d2]) and hand_card_1 == -1:
-                            x1, y1, x2, y2 = max_loc[0], max_loc[1], max_loc[0] + \
-                                15, max_loc[1] + 15
-                            scaleTemp[y1:y2, x1:x2] = 0
-                            hand_card_1 = poke(i)
-                            prev_hand_card_1 = hand_card_1
-                            total_points += hand_card_1
-                            i -= 1
-                        elif (max_loc[0] in [d3 for d4 in handB for d3 in d4]) and hand_card_2 == -1:
-                            x1, y1, x2, y2 = max_loc[0], max_loc[1], max_loc[0] + \
-                                15, max_loc[1] + 15
-                            scaleTemp[y1:y2, x1:x2] = 0
-                            hand_card_2 = poke(i)
-                            prev_hand_card_2 = hand_card_2
-                            total_points += hand_card_2
-                            i -= 1
-                    if total_points > 20:
-                        total_points = 20
-
-                if hand_card_1 == -1 or hand_card_2 == -1 or dealer_card == -1:
+                            print("Dealer card")
+                        elif (loc[0] in [d1 for d2 in handA for d1 in d2]) and first_card == -1:
+                            first_card = poke(i)
+                            print("first card")
+                        elif (loc[0] in [d3 for d4 in handB for d3 in d4]) and second_card == -1:
+                            second_card = poke(i)
+                            print("second card")
+                if first_card or second_card or dealer_card == -1:
+                    print("Error")
                     continue
+                if 'A' in [first_card, second_card]:
+                    hand = 'A,' + str(max([int(first_card), int(second_card)]))
+                elif first_card == second_card:
+                    hand = str(int(first_card)) + ',' + str(int(second_card))
+                else:
+                    hand = str(int(first_card) + int(second_card))
+                strategy = CHEAT_SHEET[(hand, dealer_card)]
+                print(hand, dealer_card, strategy)
+                clickz(OP_POS[strategy], 5, 5)
+            elif self.compare(stand, screen) is True:
+                print("Second round")
+                # which means it's the second round
+                # in second round, we could have mulitple cards
+                dealer_card = -1
+                total_points = 0
 
-                if hand_card_1 == hand_card_2:  # Two hand cards are equal, use table 3
-                    temp = hand_card_1
-                    strategy_table = strategyTable3
-                elif hand_card_1 == 11 or hand_card_2 == 11:  # Contains an Ace, use table 2
-                    if hand_card_1 == 11:
-                        temp = hand_card_2
-                    if hand_card_2 == 11:
-                        temp = hand_card_1
-                    strategy_table = strategyTable2
-                else:  # Other situations, use table 1
-                    temp = total_points - 3
-                    strategy_table = strategyTable1
-                if strategy_table[temp - 2][dealer_card - 2] == 'S':  # Stand
-                    position = (852, 969)
-                    clickz(position)
-                    prev_action = 'S'
-                    sleep(0.9)
-                elif strategy_table[temp - 2][dealer_card - 2] == 'H':  # Hit
-                    position = (594, 967)
-                    clickz(position)
-                    prev_action = 'H'
-                    sleep(1.6)
-                    clickz((854, 969))
-                elif strategy_table[temp - 2][dealer_card - 2] == 'D':  # Double
-                    position = (1123, 969)
-                    prev_action = 'D'
-                    clickz(position)
-                    sleep(0.6)
-                elif strategy_table[temp - 2][dealer_card - 2] == 'P':  # Split
-                    position = (1373, 969)
-                    clickz(position)
-                    prev_action = 'P'
-                    sleep(0.6)
-            elif self.compare(bet, temp) == 1:
-                top_left = max_loc
-                clickz(top_left)
-                sleep(0.01)
-            elif self.compare(win, temp) == 1:
+                for i in range(1, 53):
+                    target = imread(r'image/card/' + str(i) + '.png', 0)
+                    res = matchTemplate(
+                        screen, target, TM_CCOEFF_NORMED)
+                    _, max_val, _, loc = minMaxLoc(res)
+                    if max_val >= 0.95:
+                        # magic number to determine the position of the card
+                        if loc[1] < 353 and dealer_card == -1:
+                            dealer_card = poke(i)
+                            print("Dealer card")
+                        else:
+                            card = poke(i)
+                            if card == 'A':
+                                total_points += 11
+                            elif card in ['J', 'Q', 'K']:
+                                total_points += 10
+                            else:
+                                total_points += int(card)
+                if total_points > 21:
+                    strategy = 'stand'
+                else:
+                    strategy = CHEAT_SHEET[(hand, dealer_card)]
+                print(hand, dealer_card, strategy)
+                clickz(OP_POS[strategy], 5, 5)
+            elif self.compare(bet, screen) is True:
+                print("Betting")
+                bet_height, bet_width = bet.shape[:2]
+                clickz(max_loc, bet_height, bet_width)
+            elif self.compare(win, screen) == 1:
+                print("Win")
                 total_win += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
-                if [prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action] == [prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action]:
-                    continue
-                prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action = prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action
-                sleep(2)
-
-            elif self.compare(lose, temp) == 1:
+            elif self.compare(lose, screen) == 1:
+                print("Lose")
                 total_lose += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
-                if [prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action] == [prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action]:
-                    continue
-                prev_2_dealer_card, prev_2_hand_card_1, prev_2_hand_card_2, prev_2_action = prev_dealer_card, prev_hand_card_1, prev_hand_card_2, prev_action
-                sleep(2)
-            else:
-                sleep(0.2)
+        sleep(0.520)
 
 if __name__ == '__main__':
     app = QApplication([])
