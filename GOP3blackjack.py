@@ -114,13 +114,8 @@ def Startupverification():#启动验证函数
     print("使用说明:\n启动本软件前检查image文件夹，须包含以下文件：1.png 10.png 11.png 12.png 13.png 14.png 15.png 16.png 17.png 18.png 19.png 2.png 20.png 21.png 22.png 23.png 24.png 25.png 26.png 27.png 28.png 29.png 3.png 30.png 31.png 32.png 33.png 34.png 35.png 36.png 37.png 38.png 39.png 4.png 40.png 41.png 42.png 43.png 44.png 45.png 46.png 47.png 48.png 49.png 5.png 50.png 51.png 52.png 6.png 7.png 8.png 9.png " 
           "bet100000k.png bet50000k.png bet20000k.png bet10000k.png bet5000k.png bet2500k.png bet1000k.png bet500k.png bet100k.png bet10k.png bet1k.png bet200k.png bet25k.png bet2k.png bet50k.png bet5k.png btn.png buyin.png double.png hit.png LIST.TXT screen.png split.png sss.bat stand.png，并确保本文件与image/在同一目录内\n"
           "启动后会根据当前屏幕内容反馈到当前窗口，按顺序打开GOP3并且启动21点挂机即可(版本号1.17)\n"#1.13更新了去掉再买入功能并添加鼠标暂停和继续功能，1.12更新了时间锁，1.11更新了全桌全类型下注
-          "(V1.12引入功能)时间锁，请保证网络通畅，以及获取有效时长\n"
-          "(V1.13引入功能)当您将鼠标移至屏幕最下方，程序将暂停执行。直到您再次将鼠标移至屏幕其他边缘，程序将继续\n"
-          "(V1.15引入功能)保留牌局日志，记录挂机胜率，优化读牌逻辑\n"
-          "(V1.151引入功能)自动领取双倍经验\n"
           "注意，请坐在中间位置以便脚本顺利捕获，建议选择“非公开牌局”\n"
-          "目前参数适用1920*1080分辨率Windows电脑屏幕\n"
-          "开发者QQ:\n")
+          "目前参数适用1920*1080分辨率Windows电脑屏幕\n")
     #获取当前屏幕的分辨率
     sda=pyautogui.size()
     mysize=(sda.width,sda.height)
