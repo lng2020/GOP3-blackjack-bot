@@ -173,6 +173,16 @@ class App(QWidget):
         button_layout.addWidget(self.stop_button)
         button_layout.setAlignment(Qt.AlignCenter)
 
+        # Round Information Layout
+        self.round_info_layout = QVBoxLayout()
+        self.dealer_card_label = QLabel("Dealer Card: ")
+        self.player_cards_label = QLabel("Player Cards: ")
+        self.strategy_label = QLabel("Strategy: ")
+        self.round_info_layout.addWidget(self.dealer_card_label)
+        self.round_info_layout.addWidget(self.player_cards_label)
+        self.round_info_layout.addWidget(self.strategy_label)
+        self.round_info_layout.setAlignment(Qt.AlignLeft)
+
         # Statistics Layout
         self.statistics_layout = QVBoxLayout()
         self.total_game_label = QLabel("Total Games: 0")
@@ -198,6 +208,7 @@ class App(QWidget):
 
         main_layout.addLayout(input_layout)
         main_layout.addLayout(button_layout)
+        main_layout.addLayout(self.round_info_layout)
         main_layout.addLayout(self.statistics_layout)
         main_layout.addWidget(self.graph_view)
         main_layout.setSpacing(20)
@@ -215,6 +226,7 @@ class App(QWidget):
         bet_amount = self.bet_amount_input.currentText()
         self.program_thread = ProgramThread(bet_amount)
         self.program_thread.statUpdated.connect(self.update_stat)
+        self.program_thread.roundInformUpdated.connect(self.update_round_info)
         self.program_thread.start()
 
     def stop_program(self):
@@ -242,6 +254,11 @@ class App(QWidget):
         self.bet_amounts.append(last_bet_amount + bet_amount)
         self.winning_amounts.append(last_winning_amount + win_amount)
         self.update_graph(self.bet_amounts, self.winning_amounts)
+    
+    def update_round_info(self, dealer_card, player_cards, strategy):
+        self.dealer_card_label.setText(f"Dealer Card: {dealer_card}")
+        self.player_cards_label.setText(f"Player Cards: {player_cards}")
+        self.strategy_label.setText(f"Strategy: {strategy}")
 
     def update_graph(self, bet_amounts, winning_amounts):
         self.graph_scene.clear()
@@ -260,6 +277,7 @@ class App(QWidget):
 
 class ProgramThread(QThread):
     statUpdated = pyqtSignal(int, str)
+    roundInformUpdated = pyqtSignal(str, str, str)
 
     def __init__(self, bet_amount):
         super().__init__()
@@ -357,6 +375,7 @@ class ProgramThread(QThread):
                 card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
                 if card_num1 + card_num2 == 21:
                     if_blackjack = True
+                    self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, "stand")
                     continue
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
                 strategy = CHEAT_SHEET[
@@ -367,12 +386,14 @@ class ProgramThread(QThread):
                 ]
                 if strategy == "double":
                     if_doubled = True
+                self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, strategy)
                 clickz(OP_POS[strategy])
             elif self.compare(stand, screen) is True:
                 # which means it's the second round
                 # in second round, we could have mulitple cards
                 dealer_card = ""
                 total_points = 0
+                cards = []
 
                 for (card_name, card_image) in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
@@ -383,11 +404,13 @@ class ProgramThread(QThread):
                             dealer_card = card_name
                         else:
                             total_points += card_num_from_card_name(card_name)
+                            cards += [card_name]
                 if dealer_card == "":
                     continue
 
                 strategy = ""
                 if total_points == 21:
+                    self.roundInformUpdated.emit(dealer_card, ",".join(cards), "stand")
                     continue
                 elif total_points > 21:
                     strategy = "stand"
@@ -401,6 +424,7 @@ class ProgramThread(QThread):
                     ]
                 if strategy == "double":
                     strategy = "hit"
+                self.roundInformUpdated.emit(dealer_card, ",".join(cards), strategy)
                 clickz(OP_POS[strategy])
             elif self.compare(bet, screen) is True:
                 clickz(max_loc)
