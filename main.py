@@ -65,11 +65,14 @@ COLOR = ['c', 'd', 'h', 's']
 BUTTON_WIDTH = 215
 BUTTON_HEIGHT = 115
 
+WINDOW_WIDTH = 1920
+WINDOW_HEIGHT = 1080
+
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
     pyautogui.click(x, y, button="left", duration=0.25)
-    pyautogui.moveTo(1920/2, 1080/2, duration=0.25)
+    pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.25)
 
 
 def card_num_from_card_name(card_name):
@@ -221,7 +224,7 @@ class ProgramThread(QThread):
         while self.running:
             screenshot("image/screen.png")
             screen = imread(r"image/screen.png", 0)
-            screen = resize(screen, (1920, 1080))
+            screen = resize(screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
             if self.compare(double, screen) is True:
                 # which means it's the first round
