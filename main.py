@@ -28,6 +28,12 @@ OP_POS = {
 }
 
 CHEAT_SHEET = {
+    ('2', '2'): "hit", ('2', '3'): "hit", ('2', '4'): "hit", ('2', '5'): "hit", ('2', '6'): "hit", ('2', '7'): "hit", ('2', '8'): "hit", ('2', '9'): "hit", ('2', '10'): "hit", ('2', 'A'): "hit",
+    ('3', '2'): "hit", ('3', '3'): "hit", ('3', '4'): "hit", ('3', '5'): "hit", ('3', '6'): "hit", ('3', '7'): "hit", ('3', '8'): "hit", ('3', '9'): "hit", ('3', '10'): "hit", ('3', 'A'): "hit",
+    ('4', '2'): "hit", ('4', '3'): "hit", ('4', '4'): "hit", ('4', '5'): "hit", ('4', '6'): "hit", ('4', '7'): "hit", ('4', '8'): "hit", ('4', '9'): "hit", ('4', '10'): "hit", ('4', 'A'): "hit",
+    ('5', '2'): "hit", ('5', '3'): "hit", ('5', '4'): "hit", ('5', '5'): "hit", ('5', '6'): "hit", ('5', '7'): "hit", ('5', '8'): "hit", ('5', '9'): "hit", ('5', '10'): "hit", ('5', 'A'): "hit",
+    ('6', '2'): "hit", ('6', '3'): "hit", ('6', '4'): "hit", ('6', '5'): "hit", ('6', '6'): "hit", ('6', '7'): "hit", ('6', '8'): "hit", ('6', '9'): "hit", ('6', '10'): "hit", ('6', 'A'): "hit",
+    ('7', '2'): "hit", ('7', '3'): "hit", ('7', '4'): "hit", ('7', '5'): "hit", ('7', '6'): "hit", ('7', '7'): "hit", ('7', '8'): "hit", ('7', '9'): "hit", ('7', '10'): "hit", ('7', 'A'): "hit",
     ('8', '2'): "hit", ('8', '3'): "hit", ('8', '4'): "hit", ('8', '5'): "hit", ('8', '6'): "hit", ('8', '7'): "hit", ('8', '8'): "hit", ('8', '9'): "hit", ('8', '10'): "hit", ('8', 'A'): "hit",
     ('9', '2'): "hit", ('9', '3'): "double", ('9', '4'): "double", ('9', '5'): "double", ('9', '6'): "double", ('9', '7'): "hit", ('9', '8'): "hit", ('9', '9'): "hit", ('9', '10'): "hit", ('9', 'A'): "hit",
     ('10', '2'): "double", ('10', '3'): "double", ('10', '4'): "double", ('10', '5'): "double", ('10', '6'): "double", ('10', '7'): "double", ('10', '8'): "double", ('10', '9'): "double", ('10', '10'): "hit", ('10', 'A'): "hit",
@@ -38,6 +44,9 @@ CHEAT_SHEET = {
     ('15', '2'): "stand", ('15', '3'): "stand", ('15', '4'): "stand", ('15', '5'): "stand", ('15', '6'): "stand", ('15', '7'): "hit", ('15', '8'): "hit", ('15', '9'): "hit", ('15', '10'): "hit", ('15', 'A'): "hit",
     ('16', '2'): "stand", ('16', '3'): "stand", ('16', '4'): "stand", ('16', '5'): "stand", ('16', '6'): "stand", ('16', '7'): "hit", ('16', '8'): "hit", ('16', '9'): "hit", ('16', '10'): "hit", ('16', 'A'): "hit",
     ('17', '2'): "stand", ('17', '3'): "stand", ('17', '4'): "stand", ('17', '5'): "stand", ('17', '6'): "stand", ('17', '7'): "stand", ('17', '8'): "stand", ('17', '9'): "stand", ('17', '10'): "stand", ('17', 'A'): "stand",
+    ('18', '2'): "stand", ('18', '3'): "stand", ('18', '4'): "stand", ('18', '5'): "stand", ('18', '6'): "stand", ('18', '7'): "stand", ('18', '8'): "stand", ('18', '9'): "stand", ('18', '10'): "stand", ('18', 'A'): "stand",
+    ('19', '2'): "stand", ('19', '3'): "stand", ('19', '4'): "stand", ('19', '5'): "stand", ('19', '6'): "stand", ('19', '7'): "stand", ('19', '8'): "stand", ('19', '9'): "stand", ('19', '10'): "stand", ('19', 'A'): "stand",
+    ('20', '2'): "stand", ('20', '3'): "stand", ('20', '4'): "stand", ('20', '5'): "stand", ('20', '6'): "stand", ('20', '7'): "stand", ('20', '8'): "stand", ('20', '9'): "stand", ('20', '10'): "stand", ('20', 'A'): "stand",
     ('A,2', '2'): "hit", ('A,2', '3'): "hit", ('A,2', '4'): "hit", ('A,2', '5'): "double", ('A,2', '6'): "double", ('A,2', '7'): "hit", ('A,2', '8'): "hit", ('A,2', '9'): "hit", ('A,2', '10'): "hit", ('A,2', 'A'): "hit",
     ('A,3', '2'): "hit", ('A,3', '3'): "hit", ('A,3', '4'): "hit", ('A,3', '5'): "double", ('A,3', '6'): "double", ('A,3', '7'): "hit", ('A,3', '8'): "hit", ('A,3', '9'): "hit", ('A,3', '10'): "hit", ('A,3', 'A'): "hit",
     ('A,4', '2'): "hit", ('A,4', '3'): "hit", ('A,4', '4'): "double", ('A,4', '5'): "double", ('A,4', '6'): "double", ('A,4', '7'): "hit", ('A,4', '8'): "hit", ('A,4', '9'): "hit", ('A,4', '10'): "hit", ('A,4', 'A'): "hit",
@@ -118,15 +127,14 @@ def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
     if card_num1 == card_num2:
         return str(card_num1) + "," + str(card_num2)
     elif card_num1 == 11 or card_num2 == 11:
-        return (
-            "A" + "," + str(card_num1)
-            if card_num2 == 11
-            else "A" + "," + str(card_num2)
-        )
+        if card_num1 == 11 and card_num2 == 11:
+            return "A,A"
+        elif card_num1 == 11:
+            return "A," + str(card_num2)
+        else:
+            return "A," + str(card_num1)
     else:
-        minn = min(card_num1, card_num2)
-        maxx = max(card_num1, card_num2)
-        return str(minn + maxx)
+        return str(card_num1+card_num2)
 
 
 class App(QWidget):
@@ -346,22 +354,17 @@ class ProgramThread(QThread):
                             second_card = card_name
                 if "" in [first_card, second_card, dealer_card]:
                     continue
-                strategy = ""
                 card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
                 if card_num1 + card_num2 == 21:
                     if_blackjack = True
-                if card_num1 + card_num2 > 17:
-                    strategy = "stand"
-                elif card_num1 + card_num2 < 8:
-                    strategy = "hit"
-                else:
-                    dealer_card_num_str = card_num_str_from_card_name(dealer_card)
-                    strategy = CHEAT_SHEET[
-                        (
-                            card_suite_from_two_card_num(card_num1, card_num2),
-                            dealer_card_num_str,
-                        )
-                    ]
+                    continue
+                dealer_card_num_str = card_num_str_from_card_name(dealer_card)
+                strategy = CHEAT_SHEET[
+                    (
+                        card_suite_from_two_card_num(card_num1, card_num2),
+                        dealer_card_num_str,
+                    )
+                ]
                 if strategy == "double":
                     if_doubled = True
                 clickz(OP_POS[strategy])
@@ -382,11 +385,12 @@ class ProgramThread(QThread):
                             total_points += card_num_from_card_name(card_name)
                 if dealer_card == "":
                     continue
+
                 strategy = ""
-                if total_points > 17:
+                if total_points == 21:
+                    continue
+                elif total_points > 21:
                     strategy = "stand"
-                elif total_points < 8:
-                    strategy = "hit"
                 else:
                     dealer_card_num_str = card_num_str_from_card_name(dealer_card)
                     strategy = CHEAT_SHEET[
@@ -395,6 +399,8 @@ class ProgramThread(QThread):
                             dealer_card_num_str,
                         )
                     ]
+                if strategy == "double":
+                    strategy = "hit"
                 clickz(OP_POS[strategy])
             elif self.compare(bet, screen) is True:
                 clickz(max_loc)
