@@ -7,6 +7,8 @@ import os
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QComboBox
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 # Omit pyautogui warning
 simplefilter("ignore")
@@ -68,6 +70,25 @@ BUTTON_HEIGHT = 115
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
 
+BET_AMOUNT = {
+    "1k": 1,
+    "2.5k": 2.5,
+    "5k": 5,
+    "10k": 10,
+    "25k": 25,
+    "50k": 50,
+    "100k": 100,
+    "200k": 200,
+    "500k": 500,
+    "1M": 1000,
+    "2.5M": 2500,
+    "5M": 5000,
+    "10M": 10000,
+    "25M": 25000,
+    "50M": 50000,
+    "100M": 100000,
+}
+
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
@@ -112,58 +133,75 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Blackjack Bot")
-        self.setGeometry(100, 100, 600, 400)
+        self.setGeometry(100, 100, 800, 600)
 
         main_layout = QVBoxLayout()
 
+        # Input Layout
         input_layout = QHBoxLayout()
         self.bet_amount_label = QLabel("Bet Amount:")
+        self.bet_amount_label.setStyleSheet("font-weight: bold;")
         self.bet_amount_input = QComboBox()
         self.bet_amount_input.addItems(
             [
-                "1k",
-                "2.5k",
-                "5k",
-                "10k",
-                "25k",
-                "50k",
-                "100k",
-                "200k",
-                "500k",
-                "1M",
-                "2.5M",
-                "5M",
-                "10M",
-                "25M",
-                "50M",
-                "100M",
+                "1k", "2.5k", "5k", "10k", "25k", "50k", "100k",
+                "200k", "500k", "1M", "2.5M", "5M", "10M", "25M", "50M", "100M"
             ]
         )
+        self.bet_amount_input.setStyleSheet("padding: 5px;")
         input_layout.addWidget(self.bet_amount_label)
         input_layout.addWidget(self.bet_amount_input)
-        main_layout.addLayout(input_layout)
+        input_layout.setAlignment(Qt.AlignCenter)
 
+        # Button Layout
+        button_layout = QHBoxLayout()
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.start_program)
+        self.start_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
         self.stop_button = QPushButton("Stop")
         self.stop_button.clicked.connect(self.stop_program)
-        main_layout.addWidget(self.start_button)
-        main_layout.addWidget(self.stop_button)
+        self.stop_button.setStyleSheet("background-color: #F44336; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
+        button_layout.addWidget(self.start_button)
+        button_layout.addWidget(self.stop_button)
+        button_layout.setAlignment(Qt.AlignCenter)
 
+        # Statistics Layout
         self.statistics_layout = QVBoxLayout()
-        self.total_games_label = QLabel("Total Games: 0")
-        self.total_wins_label = QLabel("Total Wins: 0")
-        self.statistics_layout.addWidget(self.total_games_label)
-        self.statistics_layout.addWidget(self.total_wins_label)
+        self.total_game_label = QLabel("Total Games: 0")
+        self.total_game_label.setStyleSheet("font-weight: bold;")
+        self.total_win_label = QLabel("Total Wins: 0")
+        self.total_win_label.setStyleSheet("font-weight: bold;")
+        self.total_lose_label = QLabel("Total Lose: 0")
+        self.total_lose_label.setStyleSheet("font-weight: bold;")
+        self.total_draw_label = QLabel("Total Draw: 0")
+        self.total_draw_label.setStyleSheet("font-weight: bold;")
+        self.statistics_layout.addWidget(self.total_game_label)
+        self.statistics_layout.addWidget(self.total_win_label)
+        self.statistics_layout.addWidget(self.total_lose_label)
+        self.statistics_layout.addWidget(self.total_draw_label)
+        self.statistics_layout.setAlignment(Qt.AlignCenter)
 
+        # Graph View
         self.graph_view = QGraphicsView()
         self.graph_scene = QGraphicsScene()
         self.graph_view.setScene(self.graph_scene)
-        self.graph_view.setFixedHeight(200)
-        self.statistics_layout.addWidget(self.graph_view)
+        self.graph_view.setFixedHeight(400)
+        self.graph_view.setStyleSheet("border: 1px solid #ccc;")
 
+        main_layout.addLayout(input_layout)
+        main_layout.addLayout(button_layout)
         main_layout.addLayout(self.statistics_layout)
+        main_layout.addWidget(self.graph_view)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         self.setLayout(main_layout)
+
+        self.bet_amounts = []
+        self.winning_amounts = []
+        self.total_game = 0
+        self.total_win = 0
+        self.total_lose = 0
+        self.total_draw = 0
 
     def start_program(self):
         bet_amount = self.bet_amount_input.currentText()
@@ -175,23 +213,45 @@ class App(QWidget):
         if hasattr(self, 'program_thread') and self.program_thread.isRunning():
             self.program_thread.terminate()
 
-    def update_stat(self, total_games, total_wins):
-        self.total_games_label.setText(f"Total Games: {total_games}")
-        self.total_wins_label.setText(f"Total Wins: {total_wins}")
-        self.update_graph(total_games, total_wins)
+    def update_stat(self, bet_amount, condition):
+        self.total_game += 1
+        self.total_game_label.setText(f"Total Games: {self.total_game}")
+        win_amount = 0
+        if condition == "win":
+            self.total_win += 1
+            win_amount = 2 * bet_amount
+        elif condition == "lose":
+            self.total_lose += 1
+        else:
+            self.total_draw += 1
+            win_amount = bet_amount
+            
+        self.total_win_label.setText(f"Total Wins: {self.total_win}")
+        self.total_lose_label.setText(f"Total Lose: {self.total_lose}")
+        self.total_draw_label.setText(f"Total Draw: {self.total_draw}")
+        last_bet_amount = self.bet_amounts[-1] if self.bet_amounts else 0
+        last_winning_amount = self.winning_amounts[-1] if self.winning_amounts else 0
+        self.bet_amounts.append(last_bet_amount + bet_amount)
+        self.winning_amounts.append(last_winning_amount + win_amount)
+        self.update_graph(self.bet_amounts, self.winning_amounts)
 
-    def update_graph(self, total_games, total_wins):
+    def update_graph(self, bet_amounts, winning_amounts):
         self.graph_scene.clear()
-        win_rate = total_wins / total_games * 100 if total_games > 0 else 0
-        bar_width = 100
-        bar_height = win_rate * 2
-        bar_item = QGraphicsRectItem(0, 200 - bar_height, bar_width, bar_height)
-        bar_item.setBrush(QColor("green"))
-        self.graph_scene.addItem(bar_item)
+
+        figure = plt.figure(figsize=(5, 3))
+        canvas = FigureCanvas(figure)
+
+        ax = figure.add_subplot(111)
+        ax.plot(bet_amounts, winning_amounts)
+        ax.set_xlabel('Bet Amount (in 1k)')
+        ax.set_ylabel('Winning Amount (in 1k)')
+        ax.set_title('Bet Amount vs Winning Amount')
+
+        self.graph_scene.addWidget(canvas)
 
 
 class ProgramThread(QThread):
-    statUpdated = pyqtSignal(int, int)
+    statUpdated = pyqtSignal(int, str)
 
     def __init__(self, bet_amount):
         super().__init__()
@@ -212,11 +272,12 @@ class ProgramThread(QThread):
 
     def run(self):
         global max_loc
-        total_win = 0
-        total_lose = 0
+        if_doubled = False
+        if_blackjack = False
 
         win = imread(r"image/win.png", 0)
         lose = imread(r"image/lose.png", 0)
+        draw = imread(r"image/draw.png", 0)
         stand = imread(r"image/stand.png", 0)
         double = imread(r"image/double.png", 0)
         bet = imread(r"image/bet/bet" + self.bet_amount + ".png", 0)
@@ -226,7 +287,43 @@ class ProgramThread(QThread):
             screen = imread(r"image/screen.png", 0)
             screen = resize(screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
-            if self.compare(double, screen) is True:
+            if self.compare(win, screen) == 1:
+                amount = 0
+                if if_doubled:
+                    amount += 2 * BET_AMOUNT[self.bet_amount]
+                elif if_blackjack:
+                    amount += 2.5 * BET_AMOUNT[self.bet_amount]
+                else:
+                    amount += BET_AMOUNT[self.bet_amount]
+                if_doubled = False
+                if_blackjack = False
+                self.statUpdated.emit(amount, "win")
+                sleep(2)
+            elif self.compare(lose, screen) == 1:
+                amount = 0
+                if if_doubled:
+                    amount = 2 * BET_AMOUNT[self.bet_amount]
+                elif if_blackjack:
+                    amount = 2.5 * BET_AMOUNT[self.bet_amount]
+                else:
+                    amount = BET_AMOUNT[self.bet_amount]
+                if_doubled = False
+                if_blackjack = False
+                self.statUpdated.emit(amount, "lose")
+                sleep(2)
+            elif self.compare(draw, screen) == 1:
+                amount = 0
+                if if_doubled:
+                    amount = 2 * BET_AMOUNT[self.bet_amount]
+                elif if_blackjack:
+                    amount = 2.5 * BET_AMOUNT[self.bet_amount]
+                else:
+                    amount = BET_AMOUNT[self.bet_amount]
+                if_doubled = False
+                if_blackjack = False
+                self.statUpdated.emit(amount, "draw")
+                sleep(2)
+            elif self.compare(double, screen) is True:
                 # which means it's the first round
                 # in first round, we should only have 2 cards
                 first_card = ""
@@ -251,6 +348,8 @@ class ProgramThread(QThread):
                     continue
                 strategy = ""
                 card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
+                if card_num1 + card_num2 == 21:
+                    if_blackjack = True
                 if card_num1 + card_num2 > 17:
                     strategy = "stand"
                 elif card_num1 + card_num2 < 8:
@@ -263,6 +362,8 @@ class ProgramThread(QThread):
                             dealer_card_num_str,
                         )
                     ]
+                if strategy == "double":
+                    if_doubled = True
                 clickz(OP_POS[strategy])
             elif self.compare(stand, screen) is True:
                 # which means it's the second round
@@ -297,16 +398,7 @@ class ProgramThread(QThread):
                 clickz(OP_POS[strategy])
             elif self.compare(bet, screen) is True:
                 clickz(max_loc)
-                # sleep to avoid multi counting
-                sleep(2)
-            elif self.compare(win, screen) == 1:
-                total_win += 1
-                self.statUpdated.emit(total_win + total_lose, total_win)
-                # sleep to avoid multi counting
-                sleep(2)
-            elif self.compare(lose, screen) == 1:
-                total_lose += 1
-                self.statUpdated.emit(total_win + total_lose, total_win)
+            
     def stop(self):
         self.terminate()
         self.wait()
