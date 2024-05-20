@@ -124,6 +124,8 @@ def card_num_str_from_card_name(card_name):
 
 def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
     if card_num1 == card_num2:
+        if card_num1 == 11 and card_num2 == 11:
+            return "A,A"
         return str(card_num1) + "," + str(card_num2)
     elif card_num1 == 11 or card_num2 == 11:
         if card_num1 == 11 and card_num2 == 11:
@@ -365,8 +367,9 @@ class ProgramThread(QThread):
                     amount += BET_AMOUNT[self.bet_amount]
                 is_doubled = False
                 is_blackjack = False
+                is_split = False
                 self.statUpdated.emit(amount, "win")
-                sleep(2)
+                sleep(1.5)
             elif self.compare(lose, screen):
                 amount = 0
                 if is_doubled:
@@ -377,8 +380,9 @@ class ProgramThread(QThread):
                     amount = BET_AMOUNT[self.bet_amount]
                 is_doubled = False
                 is_blackjack = False
+                is_split = False
                 self.statUpdated.emit(amount, "lose")
-                sleep(2)
+                sleep(1.5)
             elif self.compare(draw, screen):
                 amount = 0
                 if is_doubled:
@@ -389,12 +393,10 @@ class ProgramThread(QThread):
                     amount = BET_AMOUNT[self.bet_amount]
                 is_doubled = False
                 is_blackjack = False
+                is_split = False
                 self.statUpdated.emit(amount, "draw")
-                sleep(2)
+                sleep(1.5)
             elif self.compare(double, screen):
-                # two situations
-                # 1. it's the first round and only have two cards
-                # 2. it's after split and have two groups of cards
                 first_card = ""
                 second_card = ""
                 dealer_card = ""
@@ -427,8 +429,14 @@ class ProgramThread(QThread):
                 ]
                 if strategy == "double":
                     is_doubled = True
-                elif strategy == "split":
-                    if_split = True
+                if strategy == "split" and not is_split:
+                    is_split = True
+                elif strategy == "split" and is_split:
+                    # we can't split again
+                    if card_num1 + card_num2 < 12:
+                        strategy = "hit"
+                    else:
+                        strategy = "stand"
                 self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, strategy)
                 clickz(OP_POS[strategy])
             elif self.compare(stand, screen):
