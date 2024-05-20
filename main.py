@@ -154,6 +154,7 @@ class App(QWidget):
             ]
         )
         self.bet_amount_input.setStyleSheet("padding: 5px;")
+        self.bet_amount_input.setFixedWidth(150)
         input_layout.addWidget(self.bet_amount_label)
         input_layout.addWidget(self.bet_amount_input)
         input_layout.setAlignment(Qt.AlignCenter)
@@ -162,10 +163,10 @@ class App(QWidget):
         button_layout = QHBoxLayout()
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.start_program)
-        self.start_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
+        self.start_button.setCheckable(True)
         self.stop_button = QPushButton("Stop")
         self.stop_button.clicked.connect(self.stop_program)
-        self.stop_button.setStyleSheet("background-color: #F44336; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
+        self.stop_button.setCheckable(True)
         button_layout.addWidget(self.start_button)
         button_layout.addWidget(self.stop_button)
         button_layout.setAlignment(Qt.AlignCenter)
@@ -195,6 +196,9 @@ class App(QWidget):
         self.dealer_card_label = QLabel("Dealer Card: ")
         self.player_cards_label = QLabel("Player Cards: ")
         self.strategy_label = QLabel("Strategy: ")
+        self.dealer_card_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.player_cards_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.strategy_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.round_info_layout.addWidget(self.dealer_card_label)
         self.round_info_layout.addWidget(self.player_cards_label)
         self.round_info_layout.addWidget(self.strategy_label)
@@ -203,13 +207,13 @@ class App(QWidget):
         # Statistics Layout
         self.statistics_layout = QVBoxLayout()
         self.total_game_label = QLabel("Total Games: 0")
-        self.total_game_label.setStyleSheet("font-weight: bold;")
+        self.total_game_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.total_win_label = QLabel("Total Wins: 0")
-        self.total_win_label.setStyleSheet("font-weight: bold;")
+        self.total_win_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.total_lose_label = QLabel("Total Lose: 0")
-        self.total_lose_label.setStyleSheet("font-weight: bold;")
+        self.total_lose_label.setStyleSheet("font-size: 16px; font-weight: bold;") 
         self.total_draw_label = QLabel("Total Draw: 0")
-        self.total_draw_label.setStyleSheet("font-weight: bold;")
+        self.total_draw_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.statistics_layout.addWidget(self.total_game_label)
         self.statistics_layout.addWidget(self.total_win_label)
         self.statistics_layout.addWidget(self.total_lose_label)
@@ -240,19 +244,28 @@ class App(QWidget):
         self.total_lose = 0
         self.total_draw = 0
 
+        self.update_button_styles()
         self.populate_cheat_sheet()
 
     def start_program(self):
-        bet_amount = self.bet_amount_input.currentText()
-        self.program_thread = ProgramThread(bet_amount)
-        self.program_thread.statUpdated.connect(self.update_stat)
-        self.program_thread.roundInformUpdated.connect(self.update_round_info)
-        self.program_thread.start()
+        if self.start_button.isChecked():
+            bet_amount = self.bet_amount_input.currentText()
+            self.program_thread = ProgramThread(bet_amount)
+            self.program_thread.statUpdated.connect(self.update_stat)
+            self.program_thread.roundInformUpdated.connect(self.update_round_info)
+            self.program_thread.start()
+        else:
+            self.stop_program()
+        
+        self.update_button_styles()
 
     def stop_program(self):
-        if hasattr(self, 'program_thread') and self.program_thread.isRunning():
-            self.program_thread.terminate()
-
+        if hasattr(self, "program_thread"):
+            self.program_thread.running = False
+        self.start_button.setChecked(False)
+        self.stop_button.setChecked(False)
+        self.update_button_styles()
+    
     def update_stat(self, bet_amount, condition):
         self.total_game += 1
         self.total_game_label.setText(f"Total Games: {self.total_game}")
@@ -312,6 +325,16 @@ class App(QWidget):
 
         self.cheat_sheet_table.resizeColumnsToContents()
 
+    def update_button_styles(self):
+        if self.start_button.isChecked():
+            self.start_button.setStyleSheet("background-color: #388E3C; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
+        else:
+            self.start_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
+
+        if self.stop_button.isChecked():
+            self.stop_button.setStyleSheet("background-color: #D32F2F; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
+        else:
+            self.stop_button.setStyleSheet("background-color: #F44336; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
 
 class ProgramThread(QThread):
     statUpdated = pyqtSignal(int, str)
