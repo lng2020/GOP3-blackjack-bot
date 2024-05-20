@@ -13,8 +13,8 @@ simplefilter("ignore")
 pyautogui.FAILSAFE = False
 
 # Hand card positions
-handA = [range(895, 912), range(1028, 1040), range(744, 762)]
-handB = [range(939, 953), range(1072, 1084), range(789, 803)]
+FIRST_HAND_POS = [range(895, 912), range(1028, 1040), range(744, 762)]
+SECOND_HAND_POS = [range(939, 953), range(1072, 1084), range(789, 803)]
 
 max_loc = None
 
@@ -67,34 +67,91 @@ def clickz(top_left, height, width):
     tag_half_height = int(height / 2)
     tag_center_x = top_left[0] + tag_half_width
     tag_center_y = top_left[1] + tag_half_height
-    pyautogui.click(tag_center_x, tag_center_y, button='left')
+    pyautogui.click(tag_center_x, tag_center_y, button="left", duration=0.2)
+    pyautogui.moveTo(1920/2, 1080/2, duration=0.2)
+
+
+def card_num_from_card_name(card_name):
+    if card_name[1] in ["t", "j", "q", "k"]:
+        return 10
+    elif card_name[1] == "a":
+        return 11
+    else:
+        return int(card_name[1])
+
+
+def card_num_str_from_card_name(card_name):
+    if card_name[1] in ["t", "j", "q", "k"]:
+        return "10"
+    elif card_name[1] == "a":
+        return "A"
+    else:
+        return card_name[1]
+
+
+def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
+    if card_num1 == card_num2:
+        return str(card_num1) + "," + str(card_num2)
+    elif card_num1 == 11 or card_num2 == 11:
+        return (
+            "A" + "," + str(card_num1)
+            if card_num2 == 11
+            else "A" + "," + str(card_num2)
+        )
+    else:
+        minn = min(card_num1, card_num2)
+        maxx = max(card_num1, card_num2)
+        return str(minn + maxx)
+
 
 class App(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Blackjack Bot')
+        self.setWindowTitle("Blackjack Bot")
         self.setGeometry(100, 100, 600, 400)
 
         main_layout = QVBoxLayout()
 
         input_layout = QHBoxLayout()
-        self.bet_amount_label = QLabel('Bet Amount:')
+        self.bet_amount_label = QLabel("Bet Amount:")
         self.bet_amount_input = QComboBox()
-        self.bet_amount_input.addItems(['1k', '2.5k', '5k', '10k', '25k', '50k', '100k', '200k', '500k', '1M', '2.5M', '5M', '10M', '25M', '50M', '100M'])
+        self.bet_amount_input.addItems(
+            [
+                "1k",
+                "2.5k",
+                "5k",
+                "10k",
+                "25k",
+                "50k",
+                "100k",
+                "200k",
+                "500k",
+                "1M",
+                "2.5M",
+                "5M",
+                "10M",
+                "25M",
+                "50M",
+                "100M",
+            ]
+        )
         input_layout.addWidget(self.bet_amount_label)
         input_layout.addWidget(self.bet_amount_input)
         main_layout.addLayout(input_layout)
 
-        self.start_button = QPushButton('Start')
+        self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.start_program)
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.stop_program)
         main_layout.addWidget(self.start_button)
+        main_layout.addWidget(self.stop_button)
 
         self.statistics_layout = QVBoxLayout()
-        self.total_games_label = QLabel('Total Games: 0')
-        self.total_wins_label = QLabel('Total Wins: 0')
+        self.total_games_label = QLabel("Total Games: 0")
+        self.total_wins_label = QLabel("Total Wins: 0")
         self.statistics_layout.addWidget(self.total_games_label)
         self.statistics_layout.addWidget(self.total_wins_label)
-        
+
         self.graph_view = QGraphicsView()
         self.graph_scene = QGraphicsScene()
         self.graph_view.setScene(self.graph_scene)
@@ -110,9 +167,13 @@ class App(QWidget):
         self.program_thread.statUpdated.connect(self.update_stat)
         self.program_thread.start()
 
+    def stop_program(self):
+        if hasattr(self, 'program_thread') and self.program_thread.isRunning():
+            self.program_thread.terminate()
+
     def update_stat(self, total_games, total_wins):
-        self.total_games_label.setText(f'Total Games: {total_games}')
-        self.total_wins_label.setText(f'Total Wins: {total_wins}')
+        self.total_games_label.setText(f"Total Games: {total_games}")
+        self.total_wins_label.setText(f"Total Wins: {total_wins}")
         self.update_graph(total_games, total_wins)
 
     def update_graph(self, total_games, total_wins):
@@ -121,7 +182,7 @@ class App(QWidget):
         bar_width = 100
         bar_height = win_rate * 2
         bar_item = QGraphicsRectItem(0, 200 - bar_height, bar_width, bar_height)
-        bar_item.setBrush(QColor('green'))
+        bar_item.setBrush(QColor("green"))
         self.graph_scene.addItem(bar_item)
 
 
@@ -131,7 +192,8 @@ class ProgramThread(QThread):
     def __init__(self, bet_amount):
         super().__init__()
         self.bet_amount = bet_amount
-        
+        self.running = True
+
     def compare(self, target, screen):
         global max_loc
         res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
@@ -149,129 +211,102 @@ class ProgramThread(QThread):
         double = imread(r"image/double.png", 0)
         bet = imread(r"image/bet/bet" + self.bet_amount + ".png", 0)
 
-        while True:
-            screenshot('image/screen.png')
-            screen = imread(r'image/screen.png', 0)
+        while self.running:
+            screenshot("image/screen.png")
+            screen = imread(r"image/screen.png", 0)
             screen = resize(screen, (1920, 1080))
 
             if self.compare(double, screen) is True:
-                print("First round")
                 # which means it's the first round
                 # in first round, we should only have 2 cards
-                first_card = ''
-                second_card = ''
-                dealer_card = ''
+                first_card = ""
+                second_card = ""
+                dealer_card = ""
                 for num in NUMBER:
                     for col in COLOR:
                         card_name = col + num
-                        target = imread(r'image/card/' + card_name + '.png', 0)
-                        res = matchTemplate(
-                            screen, target, TM_CCOEFF_NORMED)
+                        target = imread(r"image/card/" + card_name + ".png", 0)
+                        res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
                         _, val, _, loc = minMaxLoc(res)
-                        print(card_name, val, loc)
                         if val >= 0.95:
                             # magic number to determine the position of the card
-                            if loc[1] < 353 and dealer_card == '':
+                            if loc[1] < 353 and dealer_card == "":
                                 dealer_card = card_name
-                                print("Dealer card: ", dealer_card)
-                            elif (loc[0] in [d1 for d2 in handA for d1 in d2]) and first_card == '':
+                            elif (
+                                loc[0] in [d1 for d2 in FIRST_HAND_POS for d1 in d2]
+                            ) and first_card == "":
                                 first_card = card_name
-                                print("first card: ", first_card)
-                            elif (loc[0] in [d3 for d4 in handB for d3 in d4]) and second_card == '':
+                            elif (
+                                loc[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]
+                            ) and second_card == "":
                                 second_card = card_name
-                                print("second card: ", second_card)
-                if '' in  [first_card, second_card, dealer_card]:
-                    print("Error: Cannot find cards")
+                if "" in [first_card, second_card, dealer_card]:
                     continue
-                if first_card[1] in ['t', 'j', 'q', 'k']:
-                    first_card = '10'
-                elif first_card[1] == 'a':
-                    first_card = 'A'
+                strategy = ""
+                card_num1, card_num2 = card_num_from_card_name(
+                    first_card
+                ), card_num_from_card_name(second_card)
+                if card_num1 + card_num2 > 17:
+                    strategy = "stand"
+                elif card_num1 + card_num2 < 8:
+                    strategy = "hit"
                 else:
-                    first_card = first_card[1]
-                if second_card[1] in ['t', 'j', 'q', 'k']:
-                    second_card = '10'
-                elif second_card[1] == 'a':
-                    second_card = 'A'
-                else:
-                    second_card = second_card[1]
-                card_suit = ''
-                strategy = ''
-                if first_card == second_card:
-                    card_suit = first_card + ',' + second_card
-                elif 'A' in [first_card, second_card]:
-                    card_suit = 'A' + ',' + first_card if second_card == 'A' else 'A' + ',' + second_card
-                else:
-                    card_suit = str(int(first_card) + int(second_card))
-                    if int(card_suit) > 17:
-                        strategy = 'stand'
-                if dealer_card[1] in ['t', 'j', 'q', 'k']:
-                    dealer_card = '10'
-                elif dealer_card[1] == 'a':
-                    dealer_card = 'A'
-                else:
-                    dealer_card = dealer_card[1]
-                if strategy == '':
-                    strategy = CHEAT_SHEET[(card_suit, dealer_card)]
-                print(card_suit, dealer_card, strategy)
+                    dealer_card_num_str = card_num_str_from_card_name(dealer_card)
+                    strategy = CHEAT_SHEET[
+                        (
+                            card_suite_from_two_card_num(card_num1, card_num2),
+                            dealer_card_num_str,
+                        )
+                    ]
                 clickz(OP_POS[strategy], 5, 5)
             elif self.compare(stand, screen) is True:
-                print("Second round")
                 # which means it's the second round
                 # in second round, we could have mulitple cards
-                dealer_card = ''
+                dealer_card = ""
                 total_points = 0
 
                 for num in NUMBER:
                     for col in COLOR:
                         card_name = col + num
-                        target = imread(r'image/card/' + card_name + '.png', 0)
-                        res = matchTemplate(
-                            screen, target, TM_CCOEFF_NORMED)
+                        target = imread(r"image/card/" + card_name + ".png", 0)
+                        res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
                         _, max_val, _, loc = minMaxLoc(res)
                         if max_val >= 0.95:
                             # magic number to determine the position of the card
-                            if loc[1] < 353 and dealer_card == '':
+                            if loc[1] < 353 and dealer_card == "":
                                 dealer_card = card_name
-                                print("Dealer card: ", dealer_card)
                             else:
-                                if card_name[1] in ['t', 'j', 'q', 'k']:
-                                    total_points += 10
-                                elif card_name[1] == 'a':
-                                    total_points += 11
-                                else:
-                                    total_points += int(card_name[1])
-                if dealer_card == '':
-                    print("Error: Cannot find dealer card")
+                                total_points += card_num_from_card_name(card_name)
+                if dealer_card == "":
                     continue
-                elif dealer_card[1] in ['t', 'j', 'q', 'k']:
-                    dealer_card = '10'
-                elif dealer_card[1] == 'a':
-                    dealer_card = 'A'
-                else:
-                    dealer_card = dealer_card[0]
+                strategy = ""
                 if total_points > 17:
-                    strategy = 'stand'
+                    strategy = "stand"
+                elif total_points < 8:
+                    strategy = "hit"
                 else:
-                    strategy = CHEAT_SHEET[(str(total_points), dealer_card)]
-                print(str(total_points), dealer_card, strategy)
+                    dealer_card_num_str = card_num_str_from_card_name(dealer_card)
+                    strategy = CHEAT_SHEET[
+                        (
+                            str(total_points),
+                            dealer_card_num_str,
+                        )
+                    ]
                 clickz(OP_POS[strategy], 5, 5)
             elif self.compare(bet, screen) is True:
-                print("Betting")
                 bet_height, bet_width = bet.shape[:2]
                 clickz(max_loc, bet_height, bet_width)
             elif self.compare(win, screen) == 1:
-                print("Win")
                 total_win += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
             elif self.compare(lose, screen) == 1:
-                print("Lose")
                 total_lose += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
-        clickz((1920/2, 1080/2), 5, 5)
-        sleep(0.520)
+    def stop(self):
+        self.terminate()
+        self.wait()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication([])
     window = App()
     window.show()
