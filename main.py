@@ -11,10 +11,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from numpy import where as np_where
 
-# Omit pyautogui warning
-simplefilter("ignore")
-pyautogui.FAILSAFE = False
-
 # Hand card positions
 FIRST_HAND_POS = [range(895, 912), range(1028, 1040), range(744, 762)]
 SECOND_HAND_POS = [range(939, 953), range(1072, 1084), range(789, 803)]
@@ -89,7 +85,7 @@ BET_AMOUNT = {
     "2.5M": 2500,
     "5M": 5000,
     "10M": 10000,
-    "25M": 25000,
+    "20M": 20000,
     "50M": 50000,
     "100M": 100000,
 }
@@ -154,7 +150,7 @@ class App(QWidget):
         self.bet_amount_input.addItems(
             [
                 "1k", "2.5k", "5k", "10k", "25k", "50k", "100k",
-                "200k", "500k", "1M", "2.5M", "5M", "10M", "25M", "50M", "100M"
+                "200k", "500k", "1M", "2.5M", "5M", "10M", "20M", "50M", "100M"
             ]
         )
         self.bet_amount_input.setStyleSheet("padding: 5px;")
