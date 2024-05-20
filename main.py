@@ -18,8 +18,6 @@ pyautogui.FAILSAFE = False
 FIRST_HAND_POS = [range(895, 912), range(1028, 1040), range(744, 762)]
 SECOND_HAND_POS = [range(939, 953), range(1072, 1084), range(789, 803)]
 
-max_loc = None
-
 OP_POS = {
     'stand': (852, 969),
     'hit': (594, 967),
@@ -291,13 +289,11 @@ class ProgramThread(QThread):
                 self.card_images[card_name] = card_image
 
     def compare(self, target, screen):
-        global max_loc
         res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
-        _, val, _, max_loc = minMaxLoc(res)
-        return True if val >= 0.9 else False
+        _, val, _, loc = minMaxLoc(res)
+        return loc if val >= 0.9 else None
 
     def run(self):
-        global max_loc
         if_doubled = False
         if_blackjack = False
 
@@ -313,7 +309,7 @@ class ProgramThread(QThread):
             screen = imread(r"image/screen.png", 0)
             screen = resize(screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
-            if self.compare(win, screen) == 1:
+            if self.compare(win, screen):
                 amount = 0
                 if if_doubled:
                     amount += 2 * BET_AMOUNT[self.bet_amount]
@@ -325,7 +321,7 @@ class ProgramThread(QThread):
                 if_blackjack = False
                 self.statUpdated.emit(amount, "win")
                 sleep(2)
-            elif self.compare(lose, screen) == 1:
+            elif self.compare(lose, screen):
                 amount = 0
                 if if_doubled:
                     amount = 2 * BET_AMOUNT[self.bet_amount]
@@ -337,7 +333,7 @@ class ProgramThread(QThread):
                 if_blackjack = False
                 self.statUpdated.emit(amount, "lose")
                 sleep(2)
-            elif self.compare(draw, screen) == 1:
+            elif self.compare(draw, screen):
                 amount = 0
                 if if_doubled:
                     amount = 2 * BET_AMOUNT[self.bet_amount]
@@ -349,9 +345,8 @@ class ProgramThread(QThread):
                 if_blackjack = False
                 self.statUpdated.emit(amount, "draw")
                 sleep(2)
-            elif self.compare(double, screen) is True:
-                # which means it's the first round
-                # in first round, we should only have 2 cards
+            elif self.compare(double, screen):
+                # which means it's the first round and only have 2 cards
                 first_card = ""
                 second_card = ""
                 dealer_card = ""
@@ -388,9 +383,8 @@ class ProgramThread(QThread):
                     if_doubled = True
                 self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, strategy)
                 clickz(OP_POS[strategy])
-            elif self.compare(stand, screen) is True:
-                # which means it's the second round
-                # in second round, we could have mulitple cards
+            elif self.compare(stand, screen):
+                # which means it's the second round and could have mulitple cards
                 dealer_card = ""
                 total_points = 0
                 cards = []
@@ -426,8 +420,8 @@ class ProgramThread(QThread):
                     strategy = "hit"
                 self.roundInformUpdated.emit(dealer_card, ",".join(cards), strategy)
                 clickz(OP_POS[strategy])
-            elif self.compare(bet, screen) is True:
-                clickz(max_loc)
+            elif (res := self.compare(bet, screen)) is not None:
+                clickz(res[0], res[1])
             
     def stop(self):
         self.terminate()
