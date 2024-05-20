@@ -62,13 +62,14 @@ NUMBER = ['a', '2', '3', '4', '5', '6', '7', '8', '9', 't', 'j', 'q', 'k']
 
 COLOR = ['c', 'd', 'h', 's']
 
-def clickz(top_left, height, width):
-    tag_half_width = int(width / 2)
-    tag_half_height = int(height / 2)
-    tag_center_x = top_left[0] + tag_half_width
-    tag_center_y = top_left[1] + tag_half_height
-    pyautogui.click(tag_center_x, tag_center_y, button="left", duration=0.2)
-    pyautogui.moveTo(1920/2, 1080/2, duration=0.2)
+BUTTON_WIDTH = 215
+BUTTON_HEIGHT = 115
+
+def clickz(top_left):
+    x = top_left[0] + BUTTON_WIDTH / 2
+    y = top_left[1] + BUTTON_HEIGHT / 2
+    pyautogui.click(x, y, button="left", duration=0.25)
+    pyautogui.moveTo(1920/2, 1080/2, duration=0.25)
 
 
 def card_num_from_card_name(card_name):
@@ -193,6 +194,12 @@ class ProgramThread(QThread):
         super().__init__()
         self.bet_amount = bet_amount
         self.running = True
+        self.card_images = {}
+        for num in NUMBER:
+            for col in COLOR:
+                card_name = col + num
+                card_image = imread(r"image/card/" + card_name + ".png", 0)
+                self.card_images[card_name] = card_image
 
     def compare(self, target, screen):
         global max_loc
@@ -222,30 +229,25 @@ class ProgramThread(QThread):
                 first_card = ""
                 second_card = ""
                 dealer_card = ""
-                for num in NUMBER:
-                    for col in COLOR:
-                        card_name = col + num
-                        target = imread(r"image/card/" + card_name + ".png", 0)
-                        res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
-                        _, val, _, loc = minMaxLoc(res)
-                        if val >= 0.95:
-                            # magic number to determine the position of the card
-                            if loc[1] < 353 and dealer_card == "":
-                                dealer_card = card_name
-                            elif (
-                                loc[0] in [d1 for d2 in FIRST_HAND_POS for d1 in d2]
-                            ) and first_card == "":
-                                first_card = card_name
-                            elif (
-                                loc[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]
-                            ) and second_card == "":
-                                second_card = card_name
+                for (card_name, card_image) in self.card_images.items():
+                    res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
+                    _, val, _, loc = minMaxLoc(res)
+                    if val >= 0.95:
+                        # magic number to determine the position of the card
+                        if loc[1] < 353 and dealer_card == "":
+                            dealer_card = card_name
+                        elif (
+                            loc[0] in [d1 for d2 in FIRST_HAND_POS for d1 in d2]
+                        ) and first_card == "":
+                            first_card = card_name
+                        elif (
+                            loc[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]
+                        ) and second_card == "":
+                            second_card = card_name
                 if "" in [first_card, second_card, dealer_card]:
                     continue
                 strategy = ""
-                card_num1, card_num2 = card_num_from_card_name(
-                    first_card
-                ), card_num_from_card_name(second_card)
+                card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
                 if card_num1 + card_num2 > 17:
                     strategy = "stand"
                 elif card_num1 + card_num2 < 8:
@@ -258,25 +260,22 @@ class ProgramThread(QThread):
                             dealer_card_num_str,
                         )
                     ]
-                clickz(OP_POS[strategy], 5, 5)
+                clickz(OP_POS[strategy])
             elif self.compare(stand, screen) is True:
                 # which means it's the second round
                 # in second round, we could have mulitple cards
                 dealer_card = ""
                 total_points = 0
 
-                for num in NUMBER:
-                    for col in COLOR:
-                        card_name = col + num
-                        target = imread(r"image/card/" + card_name + ".png", 0)
-                        res = matchTemplate(screen, target, TM_CCOEFF_NORMED)
-                        _, max_val, _, loc = minMaxLoc(res)
-                        if max_val >= 0.95:
-                            # magic number to determine the position of the card
-                            if loc[1] < 353 and dealer_card == "":
-                                dealer_card = card_name
-                            else:
-                                total_points += card_num_from_card_name(card_name)
+                for (card_name, card_image) in self.card_images.items():
+                    res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
+                    _, max_val, _, loc = minMaxLoc(res)
+                    if max_val >= 0.95:
+                        # magic number to determine the position of the card
+                        if loc[1] < 353 and dealer_card == "":
+                            dealer_card = card_name
+                        else:
+                            total_points += card_num_from_card_name(card_name)
                 if dealer_card == "":
                     continue
                 strategy = ""
@@ -292,13 +291,16 @@ class ProgramThread(QThread):
                             dealer_card_num_str,
                         )
                     ]
-                clickz(OP_POS[strategy], 5, 5)
+                clickz(OP_POS[strategy])
             elif self.compare(bet, screen) is True:
-                bet_height, bet_width = bet.shape[:2]
-                clickz(max_loc, bet_height, bet_width)
+                clickz(max_loc)
+                # sleep to avoid multi counting
+                sleep(2)
             elif self.compare(win, screen) == 1:
                 total_win += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
+                # sleep to avoid multi counting
+                sleep(2)
             elif self.compare(lose, screen) == 1:
                 total_lose += 1
                 self.statUpdated.emit(total_win + total_lose, total_win)
