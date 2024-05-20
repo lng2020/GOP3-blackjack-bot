@@ -4,11 +4,12 @@ from cv2 import resize, matchTemplate, TM_CCOEFF_NORMED, imread, minMaxLoc
 from time import sleep
 from warnings import simplefilter
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QComboBox
+from PyQt5.QtWidgets import QApplication, QTableWidget, QTableWidgetItem, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QComboBox
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from numpy import where as np_where
 
 # Omit pyautogui warning
 simplefilter("ignore")
@@ -99,8 +100,8 @@ BET_AMOUNT = {
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
-    pyautogui.click(x, y, button="left", duration=0.25)
-    pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.25)
+    pyautogui.click(x, y, button="left", duration=0.1)
+    pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.1)
 
 
 def card_num_from_card_name(card_name):
@@ -139,9 +140,12 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Blackjack Bot")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1200, 800)
 
-        main_layout = QVBoxLayout()
+        main_layout = QHBoxLayout()
+
+        # Left Layout
+        left_layout = QVBoxLayout()
 
         # Input Layout
         input_layout = QHBoxLayout()
@@ -170,6 +174,26 @@ class App(QWidget):
         button_layout.addWidget(self.start_button)
         button_layout.addWidget(self.stop_button)
         button_layout.setAlignment(Qt.AlignCenter)
+
+        # Cheat Sheet Layout
+        self.cheat_sheet_layout = QVBoxLayout()
+        self.cheat_sheet_label = QLabel("Cheat Sheet:")
+        self.cheat_sheet_label.setStyleSheet("font-weight: bold;")
+        self.cheat_sheet_table = QTableWidget()
+        self.cheat_sheet_table.setColumnCount(11)
+        self.cheat_sheet_table.setHorizontalHeaderLabels(["", "2", "3", "4", "5", "6", "7", "8", "9", "10", "A"])
+        self.cheat_sheet_table.verticalHeader().setVisible(False)
+        self.cheat_sheet_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.cheat_sheet_table.setFixedHeight(600)
+        self.cheat_sheet_layout.addWidget(self.cheat_sheet_label)
+        self.cheat_sheet_layout.addWidget(self.cheat_sheet_table)
+
+        left_layout.addLayout(input_layout)
+        left_layout.addLayout(button_layout)
+        left_layout.addLayout(self.cheat_sheet_layout)
+
+        # Right Layout
+        right_layout = QVBoxLayout()
 
         # Round Information Layout
         self.round_info_layout = QVBoxLayout()
@@ -204,11 +228,12 @@ class App(QWidget):
         self.graph_view.setFixedHeight(400)
         self.graph_view.setStyleSheet("border: 1px solid #ccc;")
 
-        main_layout.addLayout(input_layout)
-        main_layout.addLayout(button_layout)
-        main_layout.addLayout(self.round_info_layout)
-        main_layout.addLayout(self.statistics_layout)
-        main_layout.addWidget(self.graph_view)
+        right_layout.addLayout(self.round_info_layout)
+        right_layout.addLayout(self.statistics_layout)
+        right_layout.addWidget(self.graph_view)
+
+        main_layout.addLayout(left_layout)
+        main_layout.addLayout(right_layout)
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(20, 20, 20, 20)
         self.setLayout(main_layout)
@@ -219,6 +244,8 @@ class App(QWidget):
         self.total_win = 0
         self.total_lose = 0
         self.total_draw = 0
+
+        self.populate_cheat_sheet()
 
     def start_program(self):
         bet_amount = self.bet_amount_input.currentText()
@@ -271,6 +298,24 @@ class App(QWidget):
         ax.set_title('Bet Amount vs Winning Amount')
 
         self.graph_scene.addWidget(canvas)
+    
+    def populate_cheat_sheet(self):
+        rows = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
+                "A,2", "A,3", "A,4", "A,5", "A,6", "A,7", "A,8", "A,9", "A,10", "A,A",
+                "2,2", "3,3", "4,4", "5,5", "6,6", "7,7", "8,8", "9,9", "10,10"]
+        self.cheat_sheet_table.setRowCount(len(rows))
+
+        for row, player_hand in enumerate(rows):
+            self.cheat_sheet_table.setItem(row, 0, QTableWidgetItem(str(player_hand)))
+            for col, dealer_card in enumerate(["2", "3", "4", "5", "6", "7", "8", "9", "10", "A"]):
+                key = (player_hand, dealer_card)
+                if key in CHEAT_SHEET:
+                    action = CHEAT_SHEET[key]
+                    item = QTableWidgetItem(action)
+                    item.setTextAlignment(Qt.AlignCenter)
+                    self.cheat_sheet_table.setItem(row, col + 1, item)
+
+        self.cheat_sheet_table.resizeColumnsToContents()
 
 
 class ProgramThread(QThread):
@@ -294,8 +339,9 @@ class ProgramThread(QThread):
         return loc if val >= 0.9 else None
 
     def run(self):
-        if_doubled = False
-        if_blackjack = False
+        is_doubled = False
+        is_blackjack = False
+        is_split = False
 
         win = imread(r"image/win.png", 0)
         lose = imread(r"image/lose.png", 0)
@@ -311,65 +357,65 @@ class ProgramThread(QThread):
 
             if self.compare(win, screen):
                 amount = 0
-                if if_doubled:
+                if is_doubled:
                     amount += 2 * BET_AMOUNT[self.bet_amount]
-                elif if_blackjack:
+                elif is_blackjack:
                     amount += 2.5 * BET_AMOUNT[self.bet_amount]
                 else:
                     amount += BET_AMOUNT[self.bet_amount]
-                if_doubled = False
-                if_blackjack = False
+                is_doubled = False
+                is_blackjack = False
                 self.statUpdated.emit(amount, "win")
                 sleep(2)
             elif self.compare(lose, screen):
                 amount = 0
-                if if_doubled:
+                if is_doubled:
                     amount = 2 * BET_AMOUNT[self.bet_amount]
-                elif if_blackjack:
+                elif is_blackjack:
                     amount = 2.5 * BET_AMOUNT[self.bet_amount]
                 else:
                     amount = BET_AMOUNT[self.bet_amount]
-                if_doubled = False
-                if_blackjack = False
+                is_doubled = False
+                is_blackjack = False
                 self.statUpdated.emit(amount, "lose")
                 sleep(2)
             elif self.compare(draw, screen):
                 amount = 0
-                if if_doubled:
+                if is_doubled:
                     amount = 2 * BET_AMOUNT[self.bet_amount]
-                elif if_blackjack:
+                elif is_blackjack:
                     amount = 2.5 * BET_AMOUNT[self.bet_amount]
                 else:
                     amount = BET_AMOUNT[self.bet_amount]
-                if_doubled = False
-                if_blackjack = False
+                is_doubled = False
+                is_blackjack = False
                 self.statUpdated.emit(amount, "draw")
                 sleep(2)
             elif self.compare(double, screen):
-                # which means it's the first round and only have 2 cards
+                # two situations
+                # 1. it's the first round and only have two cards
+                # 2. it's after split and have two groups of cards
                 first_card = ""
                 second_card = ""
                 dealer_card = ""
                 for (card_name, card_image) in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
-                    _, val, _, loc = minMaxLoc(res)
-                    if val >= 0.95:
+                    loc = np_where(res >= 0.95)
+                    for pt in zip(*loc[::-1]):
                         # magic number to determine the position of the card
-                        if loc[1] < 353 and dealer_card == "":
+                        if pt[1] < 353:
                             dealer_card = card_name
-                        elif (
-                            loc[0] in [d1 for d2 in FIRST_HAND_POS for d1 in d2]
-                        ) and first_card == "":
+                        elif pt[0] in [d1 for d2 in FIRST_HAND_POS for d1 in d2]:
                             first_card = card_name
-                        elif (
-                            loc[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]
-                        ) and second_card == "":
+                        elif pt[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]:
                             second_card = card_name
+                    if dealer_card and first_card and second_card:
+                            break
                 if "" in [first_card, second_card, dealer_card]:
                     continue
                 card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
                 if card_num1 + card_num2 == 21:
-                    if_blackjack = True
+                    is_blackjack = True
                     self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, "stand")
                     continue
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
@@ -380,7 +426,9 @@ class ProgramThread(QThread):
                     )
                 ]
                 if strategy == "double":
-                    if_doubled = True
+                    is_doubled = True
+                elif strategy == "split":
+                    if_split = True
                 self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, strategy)
                 clickz(OP_POS[strategy])
             elif self.compare(stand, screen):
@@ -391,17 +439,16 @@ class ProgramThread(QThread):
 
                 for (card_name, card_image) in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
-                    _, max_val, _, loc = minMaxLoc(res)
-                    if max_val >= 0.95:
+                    loc = np_where(res >= 0.95)
+                    for pt in zip(*loc[::-1]):
                         # magic number to determine the position of the card
-                        if loc[1] < 353 and dealer_card == "":
+                        if pt[1] < 353:
                             dealer_card = card_name
                         else:
                             total_points += card_num_from_card_name(card_name)
                             cards += [card_name]
-                if dealer_card == "":
+                if dealer_card == "" or total_points == 0 or len(cards) < 2:
                     continue
-
                 strategy = ""
                 if total_points == 21:
                     self.roundInformUpdated.emit(dealer_card, ",".join(cards), "stand")
@@ -421,7 +468,7 @@ class ProgramThread(QThread):
                 self.roundInformUpdated.emit(dealer_card, ",".join(cards), strategy)
                 clickz(OP_POS[strategy])
             elif (res := self.compare(bet, screen)) is not None:
-                clickz(res[0], res[1])
+                clickz(res)
             
     def stop(self):
         self.terminate()

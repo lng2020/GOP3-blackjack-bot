@@ -2,3 +2,5 @@ pyautogui
 pyscreeze
 opencv-python
 PyQt5
+matplotlib
+numpy
