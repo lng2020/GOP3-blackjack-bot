@@ -11,16 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from numpy import where as np_where
 
-# Hand card positions
-FIRST_HAND_POS = [range(895, 912), range(1028, 1040), range(744, 762)]
-SECOND_HAND_POS = [range(939, 953), range(1072, 1084), range(789, 803)]
-
-OP_POS = {
-    'stand': (852, 969),
-    'hit': (594, 967),
-    'double': (1123, 969),
-    'split': (1373, 969),
-}
+# Omit pyautogui warning
+simplefilter("ignore")
+pyautogui.FAILSAFE = False
 
 CHEAT_SHEET = {
     ('5', '2'): "hit", ('5', '3'): "hit", ('5', '4'): "hit", ('5', '5'): "hit", ('5', '6'): "hit", ('5', '7'): "hit", ('5', '8'): "hit", ('5', '9'): "hit", ('5', '10'): "hit", ('5', 'A'): "hit",
@@ -65,12 +58,6 @@ NUMBER = ['a', '2', '3', '4', '5', '6', '7', '8', '9', 't', 'j', 'q', 'k']
 
 COLOR = ['c', 'd', 'h', 's']
 
-BUTTON_WIDTH = 215
-BUTTON_HEIGHT = 115
-
-WINDOW_WIDTH = 1920
-WINDOW_HEIGHT = 1080
-
 BET_AMOUNT = {
     "1k": 1,
     "2.5k": 2.5,
@@ -90,12 +77,49 @@ BET_AMOUNT = {
     "100M": 100000,
 }
 
+BUTTON_WIDTH_PERCENT = 0.112 
+BUTTON_HEIGHT_PERCENT = 0.106 
+
+FIRST_HAND_POS_PERCENT = [
+    (0.466, 0.475), 
+    (0.952, 0.962),
+    (0.388, 0.396)
+]
+
+SECOND_HAND_POS_PERCENT = [
+    (0.489, 0.496),
+    (0.993, 1.003),
+    (0.411, 0.418)
+]
+
+OP_POS_PERCENT = {
+    'stand': (0.444, 0.897),
+    'hit': (0.309, 0.895),
+    'double': (0.585, 0.897),
+    'split': (0.715, 0.897)
+}
+
+FIRST_HAND_POS = [range(895, 912), range(1028, 1040), range(744, 762)]
+SECOND_HAND_POS = [range(939, 953), range(1072, 1084), range(789, 803)]
+
+OP_POS = {
+    'stand': (852, 969),
+    'hit': (594, 967),
+    'double': (1123, 969),
+    'split': (1373, 969),
+}
+
+BUTTON_WIDTH = 215
+BUTTON_HEIGHT = 115
+
+WINDOW_WIDTH = 1920
+WINDOW_HEIGHT = 1080
+
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
     pyautogui.click(x, y, button="left", duration=0.1)
     pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.1)
-
 
 def card_num_from_card_name(card_name):
     if card_name[1] in ["t", "j", "q", "k"]:
@@ -105,7 +129,6 @@ def card_num_from_card_name(card_name):
     else:
         return int(card_name[1])
 
-
 def card_num_str_from_card_name(card_name):
     if card_name[1] in ["t", "j", "q", "k"]:
         return "10"
@@ -113,7 +136,6 @@ def card_num_str_from_card_name(card_name):
         return "A"
     else:
         return card_name[1]
-
 
 def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
     if card_num1 == card_num2:
@@ -129,7 +151,6 @@ def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
             return "A," + str(card_num1)
     else:
         return str(card_num1+card_num2)
-
 
 class App(QWidget):
     def __init__(self):
@@ -473,20 +494,18 @@ class ProgramThread(QThread):
                             cards += [card_name]
                 if dealer_card == "" or total_points == 0 or len(cards) < 2:
                     continue
-                strategy = ""
                 if total_points == 21:
                     self.roundInformUpdated.emit(dealer_card, ",".join(cards), "stand")
                     continue
                 elif total_points > 21:
-                    strategy = "stand"
-                else:
-                    dealer_card_num_str = card_num_str_from_card_name(dealer_card)
-                    strategy = CHEAT_SHEET[
-                        (
-                            str(total_points),
-                            dealer_card_num_str,
-                        )
-                    ]
+                    total_points = total_points % 10 + 10
+                dealer_card_num_str = card_num_str_from_card_name(dealer_card)
+                strategy = CHEAT_SHEET[
+                    (
+                        str(total_points),
+                        dealer_card_num_str,
+                    )
+                ]
                 if strategy == "double":
                     strategy = "hit"
                 self.roundInformUpdated.emit(dealer_card, ",".join(cards), strategy)
