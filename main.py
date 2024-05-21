@@ -4,8 +4,8 @@ from cv2 import resize, matchTemplate, TM_CCOEFF_NORMED, imread, minMaxLoc
 from time import sleep
 from warnings import simplefilter
 import os
-from PyQt5.QtWidgets import QApplication, QTableWidget, QTableWidgetItem, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QComboBox
-from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QApplication, QGridLayout, QTableWidget, QTableWidgetItem, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QComboBox
+from PyQt5.QtGui import QColor, QIntValidator
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -164,21 +164,50 @@ class App(QWidget):
         left_layout = QVBoxLayout()
 
         # Input Layout
-        input_layout = QHBoxLayout()
+        input_layout = QGridLayout()
+
         self.bet_amount_label = QLabel("Bet Amount:")
         self.bet_amount_label.setStyleSheet("font-weight: bold;")
         self.bet_amount_input = QComboBox()
-        self.bet_amount_input.addItems(
-            [
-                "1k", "2.5k", "5k", "10k", "25k", "50k", "100k",
-                "200k", "500k", "1M", "2.5M", "5M", "10M", "20M", "50M", "100M"
-            ]
-        )
+        self.bet_amount_input.addItems([
+            "1k", "2.5k", "5k", "10k", "25k", "50k", "100k",
+            "200k", "500k", "1M", "2.5M", "5M", "10M", "20M", "50M", "100M"
+        ])
         self.bet_amount_input.setStyleSheet("padding: 5px;")
         self.bet_amount_input.setFixedWidth(150)
-        input_layout.addWidget(self.bet_amount_label)
-        input_layout.addWidget(self.bet_amount_input)
-        input_layout.setAlignment(Qt.AlignCenter)
+
+        self.num_games_label = QLabel("Number of Games:")
+        self.num_games_label.setStyleSheet("font-weight: bold;")
+        self.num_games_input = QLineEdit()
+        self.num_games_input.setText("1000")
+        self.num_games_input.setValidator(QIntValidator())
+        self.num_games_input.setStyleSheet("padding: 5px;")
+        self.num_games_input.setFixedWidth(150)
+
+        self.stop_win_label = QLabel("Stop at Net Profit Multiple(Based on Bet Amount):")
+        self.stop_win_label.setStyleSheet("font-weight: bold;")
+        self.stop_win_input = QLineEdit()
+        self.stop_win_input.setText("100")
+        self.stop_win_input.setValidator(QIntValidator())
+        self.stop_win_input.setStyleSheet("padding: 5px;")
+        self.stop_win_input.setFixedWidth(150)
+
+        self.stop_lose_label = QLabel("Stop at Net Lose Multiple(Based on Bet Amount):")
+        self.stop_lose_label.setStyleSheet("font-weight: bold;")
+        self.stop_lose_input = QLineEdit()
+        self.stop_lose_input.setText("100")
+        self.stop_lose_input.setValidator(QIntValidator())
+        self.stop_lose_input.setStyleSheet("padding: 5px;")
+        self.stop_lose_input.setFixedWidth(150)
+
+        input_layout.addWidget(self.bet_amount_label, 0, 0)
+        input_layout.addWidget(self.bet_amount_input, 0, 1)
+        input_layout.addWidget(self.num_games_label, 1, 0)
+        input_layout.addWidget(self.num_games_input, 1, 1)
+        input_layout.addWidget(self.stop_win_label, 2, 0)
+        input_layout.addWidget(self.stop_win_input, 2, 1)
+        input_layout.addWidget(self.stop_lose_label, 3, 0)
+        input_layout.addWidget(self.stop_lose_input, 3, 1)
 
         # Button Layout
         button_layout = QHBoxLayout()
@@ -259,19 +288,27 @@ class App(QWidget):
         self.setLayout(main_layout)
 
         self.bet_amounts = []
-        self.winning_amounts = []
+        self.win_amounts = []
         self.total_game = 0
         self.total_win = 0
         self.total_lose = 0
         self.total_draw = 0
+        self.bet_amount = "1k"
+        self.num_games = 1000
+        self.stop_net_profit = 100
+        self.stop_net_lose = 100
+        self.net_win = 0
 
         self.update_button_styles()
         self.populate_cheat_sheet()
 
     def start_program(self):
         if self.start_button.isChecked():
-            bet_amount = self.bet_amount_input.currentText()
-            self.program_thread = ProgramThread(bet_amount)
+            self.bet_amount = self.bet_amount_input.currentText()
+            self.num_games = int(self.num_games_input.text())
+            self.stop_net_profit = int(self.stop_win_input.text())
+            self.stop_net_lose = int(self.stop_lose_input.text())
+            self.program_thread = ProgramThread(self.bet_amount)
             self.program_thread.statUpdated.connect(self.update_stat)
             self.program_thread.roundInformUpdated.connect(self.update_round_info)
             self.program_thread.start()
@@ -286,45 +323,56 @@ class App(QWidget):
         self.start_button.setChecked(False)
         self.stop_button.setChecked(False)
         self.update_button_styles()
+        self.net_win = 0
     
-    def update_stat(self, bet_amount, condition):
+    def update_stat(self, bet_rate, condition):
         self.total_game += 1
         self.total_game_label.setText(f"Total Games: {self.total_game}")
+        win_rate = 0
         win_amount = 0
         if condition == "win":
             self.total_win += 1
-            win_amount = 2 * bet_amount
+            win_rate = 2 * bet_rate
         elif condition == "lose":
             self.total_lose += 1
         else:
             self.total_draw += 1
-            win_amount = bet_amount
-            
+            win_rate = bet_rate
+        win_amount = win_rate * BET_AMOUNT[self.bet_amount]   
+        bet_amount = BET_AMOUNT[self.bet_amount]
         self.total_win_label.setText(f"Total Wins: {self.total_win}")
         self.total_lose_label.setText(f"Total Lose: {self.total_lose}")
         self.total_draw_label.setText(f"Total Draw: {self.total_draw}")
         last_bet_amount = self.bet_amounts[-1] if self.bet_amounts else 0
-        last_winning_amount = self.winning_amounts[-1] if self.winning_amounts else 0
+        last_win_amount = self.win_amounts[-1] if self.win_amounts else 0
         self.bet_amounts.append(last_bet_amount + bet_amount)
-        self.winning_amounts.append(last_winning_amount + win_amount)
-        self.update_graph(self.bet_amounts, self.winning_amounts)
+        self.win_amounts.append(last_win_amount + win_amount)
+        self.update_graph(self.bet_amounts, self.win_amounts)
+
+        if self.total_game >= self.num_games:
+            self.stop_program()
+
+        net_win = win_rate - 1
+        self.net_win += net_win
+        if self.net_win >= self.stop_net_profit or self.net_win <= -self.stop_net_lose:
+            self.stop_program()
     
     def update_round_info(self, dealer_card, player_cards, strategy):
         self.dealer_card_label.setText(f"Dealer Card: {dealer_card}")
         self.player_cards_label.setText(f"Player Cards: {player_cards}")
         self.strategy_label.setText(f"Strategy: {strategy}")
 
-    def update_graph(self, bet_amounts, winning_amounts):
+    def update_graph(self, bet_amounts, win_amounts):
         self.graph_scene.clear()
 
         figure = plt.figure(figsize=(5, 3))
         canvas = FigureCanvas(figure)
 
         ax = figure.add_subplot(111)
-        ax.plot(bet_amounts, winning_amounts)
+        ax.plot(bet_amounts, win_amounts)
         ax.set_xlabel('Bet Amount (in 1k)')
-        ax.set_ylabel('Winning Amount (in 1k)')
-        ax.set_title('Bet Amount vs Winning Amount')
+        ax.set_ylabel('win Amount (in 1k)')
+        ax.set_title('Bet Amount vs win Amount')
 
         self.graph_scene.addWidget(canvas)
     
@@ -395,43 +443,33 @@ class ProgramThread(QThread):
             screen = resize(screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
             if self.compare(win, screen):
-                amount = 0
+                amount_rate = 1
                 if is_doubled:
-                    amount += 2 * BET_AMOUNT[self.bet_amount]
+                    amount_rate = 2 
                 elif is_blackjack:
-                    amount += 2.5 * BET_AMOUNT[self.bet_amount]
-                else:
-                    amount += BET_AMOUNT[self.bet_amount]
+                    amount_rate = 2.5
                 is_doubled = False
                 is_blackjack = False
                 is_split = False
-                self.statUpdated.emit(amount, "win")
+                self.statUpdated.emit(amount_rate, "win")
                 sleep(1.5)
             elif self.compare(lose, screen):
-                amount = 0
+                amount_rate = 1
                 if is_doubled:
-                    amount = 2 * BET_AMOUNT[self.bet_amount]
-                elif is_blackjack:
-                    amount = 2.5 * BET_AMOUNT[self.bet_amount]
-                else:
-                    amount = BET_AMOUNT[self.bet_amount]
+                    amount_rate = 2 
                 is_doubled = False
                 is_blackjack = False
                 is_split = False
-                self.statUpdated.emit(amount, "lose")
+                self.statUpdated.emit(amount_rate, "lose")
                 sleep(1.5)
             elif self.compare(draw, screen):
-                amount = 0
+                amount_rate = 1
                 if is_doubled:
-                    amount = 2 * BET_AMOUNT[self.bet_amount]
-                elif is_blackjack:
-                    amount = 2.5 * BET_AMOUNT[self.bet_amount]
-                else:
-                    amount = BET_AMOUNT[self.bet_amount]
+                    amount_rate = 2
                 is_doubled = False
                 is_blackjack = False
                 is_split = False
-                self.statUpdated.emit(amount, "draw")
+                self.statUpdated.emit(amount_rate * BET_AMOUNT[self.bet_amount], "draw")
                 sleep(1.5)
             elif self.compare(double, screen):
                 first_card = ""
