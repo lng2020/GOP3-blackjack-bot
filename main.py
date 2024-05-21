@@ -118,8 +118,8 @@ WINDOW_HEIGHT = 1080
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
-    pyautogui.click(x, y, button="left", duration=0.1)
-    pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.1)
+    pyautogui.click(x, y, button="left", duration=0.25)
+    pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.25)
 
 def card_num_from_card_name(card_name):
     if card_name[1] in ["t", "j", "q", "k"]:
