@@ -527,11 +527,15 @@ class ProgramThread(QThread):
                             cards += [card_name]
                 if dealer_card == "" or total_points == 0 or len(cards) < 2:
                     continue
-                if total_points == 21:
-                    self.roundInformUpdated.emit(dealer_card, ",".join(cards), "stand")
-                    continue
-                elif total_points > 21:
-                    total_points = total_points % 10 + 10
+                if total_points >= 21:
+                    if total_points % 10 == 1:
+                        self.roundInformUpdated.emit(dealer_card, ",".join(cards), "stand")
+                        continue
+                    elif total_points % 10 == 0:
+                        total_points = 20
+                    else:
+                        total_points = total_points % 10 + 10
+                    
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
                 strategy = CHEAT_SHEET[
                     (
