@@ -10,6 +10,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from numpy import where as np_where
+from numpy import sqrt as np_sqrt
 
 # Omit pyautogui warning
 simplefilter("ignore")
@@ -115,6 +116,16 @@ BUTTON_HEIGHT = 115
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
 
+SUPPORTED_LANGUAGE = ["English", "Chinese"]
+LANGUAGE_MAP = {
+    "English": "en-us",
+    "Chinese": "zh-cn",
+}
+
+
+def is_close(pt1, pt2, threshold=8):
+    return np_sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2) < threshold
+
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
@@ -176,6 +187,12 @@ class App(QWidget):
         ])
         self.bet_amount_input.setFixedWidth(150)
 
+        self.language_label = QLabel("GOP3 Interface Language")
+        self.language_input = QComboBox()
+        for language in SUPPORTED_LANGUAGE:
+            self.language_input.addItem(language)
+        self.language_input.setFixedWidth(150)
+
         self.num_games_label = QLabel("Round Hands: ")
         self.num_games_input = QLineEdit()
         self.num_games_input.setText("1000")
@@ -197,12 +214,14 @@ class App(QWidget):
         input_layout.addWidget(self.round_config_label, 0, 0, 1, 2)
         input_layout.addWidget(self.bet_amount_label, 1, 0)
         input_layout.addWidget(self.bet_amount_input, 1, 1)
-        input_layout.addWidget(self.num_games_label, 2, 0)
-        input_layout.addWidget(self.num_games_input, 2, 1)
-        input_layout.addWidget(self.stop_win_label, 3, 0)
-        input_layout.addWidget(self.stop_win_input, 3, 1)
-        input_layout.addWidget(self.stop_lose_label, 4, 0)
-        input_layout.addWidget(self.stop_lose_input, 4, 1)
+        input_layout.addWidget(self.language_label, 2, 0)
+        input_layout.addWidget(self.language_input, 2, 1)
+        input_layout.addWidget(self.num_games_label, 3, 0)
+        input_layout.addWidget(self.num_games_input, 3, 1)
+        input_layout.addWidget(self.stop_win_label, 4, 0)
+        input_layout.addWidget(self.stop_win_input, 4, 1)
+        input_layout.addWidget(self.stop_lose_label, 5, 0)
+        input_layout.addWidget(self.stop_lose_input, 5, 1)
 
         # Cheat Sheet Layout
         self.cheat_sheet_layout = QVBoxLayout()
@@ -299,7 +318,8 @@ class App(QWidget):
             self.num_games = int(self.num_games_input.text())
             self.stop_net_profit = int(self.stop_win_input.text())
             self.stop_net_lose = int(self.stop_lose_input.text())
-            self.program_thread = ProgramThread(self.bet_amount)
+            self.language = LANGUAGE_MAP[self.language_input.currentText()]
+            self.program_thread = ProgramThread(self.bet_amount, self.language)
             self.program_thread.statUpdated.connect(self.update_stat)
             self.program_thread.roundInformUpdated.connect(self.update_round_info)
             self.program_thread.start()
@@ -344,7 +364,7 @@ class App(QWidget):
 
         if self.round_hand >= self.num_games:
             self.stop_program()
-        net_win = win_rate - 1
+        net_win = win_rate - bet_rate
         self.net_win += net_win
         self.net_win_label.setText(f"Net Win: {self.net_win}")
         if self.net_win >= self.stop_net_profit or self.net_win <= -self.stop_net_lose:
@@ -401,14 +421,16 @@ class App(QWidget):
             self.stop_button.setStyleSheet("background-color: #F44336; color: white; font-weight: bold; padding: 10px 20px; border-radius: 5px;")
 
 class ProgramThread(QThread):
-    statUpdated = pyqtSignal(int, str)
+    statUpdated = pyqtSignal(float, str)
     roundInformUpdated = pyqtSignal(str, str, str)
 
-    def __init__(self, bet_amount):
+    def __init__(self, bet_amount, language):
         super().__init__()
         self.bet_amount = bet_amount
+        self.language = language
         self.running = True
         self.card_images = {}
+        self.image_prefix = "image/" + self.language + "/"
         for num in NUMBER:
             for col in COLOR:
                 card_name = col + num
@@ -422,14 +444,15 @@ class ProgramThread(QThread):
 
     def run(self):
         is_doubled = False
-        is_blackjack = False
         is_split = False
 
-        win = imread(r"image/win.png", 0)
-        lose = imread(r"image/lose.png", 0)
-        draw = imread(r"image/draw.png", 0)
-        stand = imread(r"image/stand.png", 0)
-        double = imread(r"image/double.png", 0)
+        win = imread(self.image_prefix + "win.png", 0)
+        lose = imread(self.image_prefix + "lose.png", 0)
+        bust = imread(self.image_prefix + "bust.png", 0)
+        draw = imread(self.image_prefix + "draw.png", 0)
+        double = imread(self.image_prefix + "double.png", 0)
+        stand = imread(self.image_prefix + "stand.png", 0)
+        blackjack = imread(self.image_prefix + "blackjack.png", 0)
         bet = imread(r"image/bet/bet" + self.bet_amount + ".png", 0)
 
         while self.running:
@@ -441,31 +464,47 @@ class ProgramThread(QThread):
                 amount_rate = 1
                 if is_doubled:
                     amount_rate = 2 
-                elif is_blackjack:
-                    amount_rate = 2.5
                 is_doubled = False
-                is_blackjack = False
                 is_split = False
                 self.statUpdated.emit(amount_rate, "win")
-                sleep(1.5)
+                sleep(2)
             elif self.compare(lose, screen):
                 amount_rate = 1
                 if is_doubled:
                     amount_rate = 2 
                 is_doubled = False
-                is_blackjack = False
                 is_split = False
                 self.statUpdated.emit(amount_rate, "lose")
-                sleep(1.5)
+                sleep(2)
+            elif self.compare(bust, screen):
+                print("bust detected")
+                loc = self.compare(bust, screen)
+                if loc[1] < 500:
+                    continue
+                amount_rate = 1
+                if is_doubled:
+                    amount_rate = 2
+                is_doubled = False
+                is_split = False
+                self.statUpdated.emit(amount_rate, "lose")
+                sleep(2)
             elif self.compare(draw, screen):
                 amount_rate = 1
                 if is_doubled:
                     amount_rate = 2
                 is_doubled = False
-                is_blackjack = False
                 is_split = False
-                self.statUpdated.emit(amount_rate * BET_AMOUNT[self.bet_amount], "draw")
-                sleep(1.5)
+                self.statUpdated.emit(amount_rate, "draw")
+                sleep(2)
+            elif self.compare(blackjack, screen):
+                loc = self.compare(blackjack, screen)
+                if loc[1] < 500:
+                    continue
+                amount_rate = 1.5
+                is_doubled = False
+                is_split = False
+                self.statUpdated.emit(amount_rate, "win")
+                sleep(2)
             elif self.compare(double, screen):
                 first_card = ""
                 second_card = ""
@@ -487,7 +526,6 @@ class ProgramThread(QThread):
                     continue
                 card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
                 if card_num1 + card_num2 == 21:
-                    is_blackjack = True
                     self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, "stand")
                     continue
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
@@ -513,18 +551,23 @@ class ProgramThread(QThread):
                 # which means it's the second round and could have mulitple cards
                 dealer_card = ""
                 total_points = 0
-                cards = []
-
+                detected_cards = []
                 for (card_name, card_image) in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
                     loc = np_where(res >= 0.95)
                     for pt in zip(*loc[::-1]):
-                        # magic number to determine the position of the card
-                        if pt[1] < 353:
-                            dealer_card = card_name
-                        else:
-                            total_points += card_num_from_card_name(card_name)
-                            cards += [card_name]
+                        already_detected = False
+                        for detected_card in detected_cards:
+                            if detected_card[0] == card_name and is_close(detected_card[1], pt):
+                                already_detected = True
+                                break
+                        if not already_detected:
+                            if pt[1] < 353:
+                                dealer_card = card_name
+                            else:
+                                total_points += card_num_from_card_name(card_name)
+                            detected_cards.append((card_name, pt))
+                cards = [card[0] for card in detected_cards if card[0] != dealer_card]
                 if dealer_card == "" or total_points == 0 or len(cards) < 2:
                     continue
                 if total_points >= 21:
@@ -547,8 +590,9 @@ class ProgramThread(QThread):
                     strategy = "hit"
                 self.roundInformUpdated.emit(dealer_card, ",".join(cards), strategy)
                 clickz(OP_POS[strategy])
-            elif (res := self.compare(bet, screen)) is not None:
-                clickz(res)
+            elif self.compare(bet, screen) is not None:
+                loc = self.compare(bet, screen)
+                clickz(loc)
             
     def stop(self):
         self.terminate()
