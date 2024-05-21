@@ -166,48 +166,58 @@ class App(QWidget):
         # Input Layout
         input_layout = QGridLayout()
 
+        self.round_config_label = QLabel("Round Configuration")
+        self.round_config_label.setStyleSheet("font-weight: bold;")
         self.bet_amount_label = QLabel("Bet Amount:")
-        self.bet_amount_label.setStyleSheet("font-weight: bold;")
         self.bet_amount_input = QComboBox()
         self.bet_amount_input.addItems([
             "1k", "2.5k", "5k", "10k", "25k", "50k", "100k",
             "200k", "500k", "1M", "2.5M", "5M", "10M", "20M", "50M", "100M"
         ])
-        self.bet_amount_input.setStyleSheet("padding: 5px;")
         self.bet_amount_input.setFixedWidth(150)
 
-        self.num_games_label = QLabel("Number of Games:")
-        self.num_games_label.setStyleSheet("font-weight: bold;")
+        self.num_games_label = QLabel("Round Hands: ")
         self.num_games_input = QLineEdit()
         self.num_games_input.setText("1000")
         self.num_games_input.setValidator(QIntValidator())
-        self.num_games_input.setStyleSheet("padding: 5px;")
         self.num_games_input.setFixedWidth(150)
 
         self.stop_win_label = QLabel("Stop at Net Profit Multiple(Based on Bet Amount):")
-        self.stop_win_label.setStyleSheet("font-weight: bold;")
         self.stop_win_input = QLineEdit()
         self.stop_win_input.setText("100")
         self.stop_win_input.setValidator(QIntValidator())
-        self.stop_win_input.setStyleSheet("padding: 5px;")
         self.stop_win_input.setFixedWidth(150)
 
         self.stop_lose_label = QLabel("Stop at Net Lose Multiple(Based on Bet Amount):")
-        self.stop_lose_label.setStyleSheet("font-weight: bold;")
         self.stop_lose_input = QLineEdit()
         self.stop_lose_input.setText("100")
         self.stop_lose_input.setValidator(QIntValidator())
-        self.stop_lose_input.setStyleSheet("padding: 5px;")
         self.stop_lose_input.setFixedWidth(150)
 
-        input_layout.addWidget(self.bet_amount_label, 0, 0)
-        input_layout.addWidget(self.bet_amount_input, 0, 1)
-        input_layout.addWidget(self.num_games_label, 1, 0)
-        input_layout.addWidget(self.num_games_input, 1, 1)
-        input_layout.addWidget(self.stop_win_label, 2, 0)
-        input_layout.addWidget(self.stop_win_input, 2, 1)
-        input_layout.addWidget(self.stop_lose_label, 3, 0)
-        input_layout.addWidget(self.stop_lose_input, 3, 1)
+        input_layout.addWidget(self.round_config_label, 0, 0, 1, 2)
+        input_layout.addWidget(self.bet_amount_label, 1, 0)
+        input_layout.addWidget(self.bet_amount_input, 1, 1)
+        input_layout.addWidget(self.num_games_label, 2, 0)
+        input_layout.addWidget(self.num_games_input, 2, 1)
+        input_layout.addWidget(self.stop_win_label, 3, 0)
+        input_layout.addWidget(self.stop_win_input, 3, 1)
+        input_layout.addWidget(self.stop_lose_label, 4, 0)
+        input_layout.addWidget(self.stop_lose_input, 4, 1)
+
+        # Cheat Sheet Layout
+        self.cheat_sheet_layout = QVBoxLayout()
+        self.cheat_sheet_label = QLabel("Strategy Configuration Cheatsheet:")
+        self.cheat_sheet_table = QTableWidget()
+        self.cheat_sheet_table.setColumnCount(11)
+        self.cheat_sheet_table.setHorizontalHeaderLabels(["", "2", "3", "4", "5", "6", "7", "8", "9", "10", "A"])
+        self.cheat_sheet_table.verticalHeader().setVisible(False)
+        self.cheat_sheet_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.cheat_sheet_table.setFixedHeight(580)
+        self.cheat_sheet_table.setFixedWidth(540)
+        self.cheat_sheet_table.setStyleSheet("border: 1px solid #ccc;")
+        self.cheat_sheet_layout.addWidget(self.cheat_sheet_label)
+        self.cheat_sheet_layout.addWidget(self.cheat_sheet_table)
+        self.populate_cheat_sheet()
 
         # Button Layout
         button_layout = QHBoxLayout()
@@ -220,61 +230,50 @@ class App(QWidget):
         button_layout.addWidget(self.start_button)
         button_layout.addWidget(self.stop_button)
         button_layout.setAlignment(Qt.AlignCenter)
-
-        # Cheat Sheet Layout
-        self.cheat_sheet_layout = QVBoxLayout()
-        self.cheat_sheet_label = QLabel("Cheat Sheet:")
-        self.cheat_sheet_label.setStyleSheet("font-weight: bold;")
-        self.cheat_sheet_table = QTableWidget()
-        self.cheat_sheet_table.setColumnCount(11)
-        self.cheat_sheet_table.setHorizontalHeaderLabels(["", "2", "3", "4", "5", "6", "7", "8", "9", "10", "A"])
-        self.cheat_sheet_table.verticalHeader().setVisible(False)
-        self.cheat_sheet_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.cheat_sheet_table.setFixedHeight(600)
-        self.cheat_sheet_layout.addWidget(self.cheat_sheet_label)
-        self.cheat_sheet_layout.addWidget(self.cheat_sheet_table)
+        self.update_button_styles()
 
         left_layout.addLayout(input_layout)
-        left_layout.addLayout(button_layout)
         left_layout.addLayout(self.cheat_sheet_layout)
+        left_layout.addLayout(button_layout)
 
         # Right Layout
         right_layout = QVBoxLayout()
 
         # Round Information Layout
-        self.round_info_layout = QVBoxLayout()
+        self.round_info_layout = QGridLayout()
+        self.round_info_label = QLabel("Round Information")
+        self.round_info_label.setStyleSheet("font-weight: bold;")
         self.dealer_card_label = QLabel("Dealer Card: ")
         self.player_cards_label = QLabel("Player Cards: ")
         self.strategy_label = QLabel("Strategy: ")
-        self.dealer_card_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        self.player_cards_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        self.strategy_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        self.round_info_layout.addWidget(self.dealer_card_label)
-        self.round_info_layout.addWidget(self.player_cards_label)
-        self.round_info_layout.addWidget(self.strategy_label)
-        self.round_info_layout.setAlignment(Qt.AlignLeft)
+        self.remaining_hands_label = QLabel("Remaining Hands: ")
+        self.net_win_label = QLabel("Net Win: ")
+        self.round_info_layout.addWidget(self.round_info_label, 0, 0, 1, 2)
+        self.round_info_layout.addWidget(self.dealer_card_label, 1, 0)
+        self.round_info_layout.addWidget(self.player_cards_label, 1, 1)
+        self.round_info_layout.addWidget(self.strategy_label, 2, 0)
+        self.round_info_layout.addWidget(self.remaining_hands_label, 2, 1)
+        self.round_info_layout.addWidget(self.net_win_label, 2, 3)
 
         # Statistics Layout
-        self.statistics_layout = QVBoxLayout()
-        self.total_game_label = QLabel("Total Games: 0")
-        self.total_game_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.statistics_layout = QGridLayout()
+        self.statistics_label = QLabel("Game Statistics")
+        self.statistics_label.setStyleSheet("font-weight: bold;")
+        self.total_hand_label = QLabel("Total Hands: 0")
         self.total_win_label = QLabel("Total Wins: 0")
-        self.total_win_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.total_lose_label = QLabel("Total Lose: 0")
-        self.total_lose_label.setStyleSheet("font-size: 16px; font-weight: bold;") 
         self.total_draw_label = QLabel("Total Draw: 0")
-        self.total_draw_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        self.statistics_layout.addWidget(self.total_game_label)
-        self.statistics_layout.addWidget(self.total_win_label)
-        self.statistics_layout.addWidget(self.total_lose_label)
-        self.statistics_layout.addWidget(self.total_draw_label)
-        self.statistics_layout.setAlignment(Qt.AlignCenter)
+        self.statistics_layout.addWidget(self.statistics_label, 0, 0, 1, 2)
+        self.statistics_layout.addWidget(self.total_hand_label, 1, 0)
+        self.statistics_layout.addWidget(self.total_win_label, 1, 1)
+        self.statistics_layout.addWidget(self.total_lose_label, 2, 0)
+        self.statistics_layout.addWidget(self.total_draw_label, 2, 1)
 
         # Graph View
         self.graph_view = QGraphicsView()
         self.graph_scene = QGraphicsScene()
         self.graph_view.setScene(self.graph_scene)
-        self.graph_view.setFixedHeight(400)
+        self.graph_view.setFixedSize(600, 600)
         self.graph_view.setStyleSheet("border: 1px solid #ccc;")
 
         right_layout.addLayout(self.round_info_layout)
@@ -283,24 +282,16 @@ class App(QWidget):
 
         main_layout.addLayout(left_layout)
         main_layout.addLayout(right_layout)
-        main_layout.setSpacing(20)
-        main_layout.setContentsMargins(20, 20, 20, 20)
         self.setLayout(main_layout)
 
-        self.bet_amounts = []
-        self.win_amounts = []
-        self.total_game = 0
+        self.total_hand = 0
         self.total_win = 0
         self.total_lose = 0
         self.total_draw = 0
-        self.bet_amount = "1k"
-        self.num_games = 1000
-        self.stop_net_profit = 100
-        self.stop_net_lose = 100
+        self.bet_amounts = []
+        self.win_amounts = []
         self.net_win = 0
-
-        self.update_button_styles()
-        self.populate_cheat_sheet()
+        self.round_hand = 0
 
     def start_program(self):
         if self.start_button.isChecked():
@@ -314,7 +305,6 @@ class App(QWidget):
             self.program_thread.start()
         else:
             self.stop_program()
-        
         self.update_button_styles()
 
     def stop_program(self):
@@ -324,10 +314,13 @@ class App(QWidget):
         self.stop_button.setChecked(False)
         self.update_button_styles()
         self.net_win = 0
+        self.round_hand = 0
     
     def update_stat(self, bet_rate, condition):
-        self.total_game += 1
-        self.total_game_label.setText(f"Total Games: {self.total_game}")
+        self.total_hand += 1
+        self.round_hand += 1
+        self.total_hand_label.setText(f"Total Hands: {self.total_hand}")
+        self.remaining_hands_label.setText(f"Remaining Hands: {self.num_games - self.total_hand}")
         win_rate = 0
         win_amount = 0
         if condition == "win":
@@ -349,11 +342,11 @@ class App(QWidget):
         self.win_amounts.append(last_win_amount + win_amount)
         self.update_graph(self.bet_amounts, self.win_amounts)
 
-        if self.total_game >= self.num_games:
+        if self.round_hand >= self.num_games:
             self.stop_program()
-
         net_win = win_rate - 1
         self.net_win += net_win
+        self.net_win_label.setText(f"Net Win: {self.net_win}")
         if self.net_win >= self.stop_net_profit or self.net_win <= -self.stop_net_lose:
             self.stop_program()
     
@@ -365,14 +358,16 @@ class App(QWidget):
     def update_graph(self, bet_amounts, win_amounts):
         self.graph_scene.clear()
 
-        figure = plt.figure(figsize=(5, 3))
+        figure = plt.figure(figsize=(6, 6))
         canvas = FigureCanvas(figure)
 
         ax = figure.add_subplot(111)
         ax.plot(bet_amounts, win_amounts)
-        ax.set_xlabel('Bet Amount (in 1k)')
-        ax.set_ylabel('win Amount (in 1k)')
-        ax.set_title('Bet Amount vs win Amount')
+        ax.set_xlabel('Bet Amount (in 1k)', fontsize=12)
+        ax.set_ylabel('Win Amount (in 1k)', fontsize=12)
+        ax.set_title('Bet Amount vs Win Amount')
+
+        plt.subplots_adjust(left=0.15, right=0.95, bottom=0.15, top=0.95)
 
         self.graph_scene.addWidget(canvas)
     
