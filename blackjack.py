@@ -272,7 +272,6 @@ class ProgramThread(QThread):
                         total_points = 20
                     else:
                         total_points = total_points % 10 + 10
-
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
                 strategy = CHEAT_SHEET[
                     (
