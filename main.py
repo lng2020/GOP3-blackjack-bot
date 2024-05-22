@@ -477,7 +477,6 @@ class ProgramThread(QThread):
                 self.statUpdated.emit(amount_rate, "lose")
                 sleep(2)
             elif self.compare(bust, screen):
-                print("bust detected")
                 loc = self.compare(bust, screen)
                 if loc[1] < 500:
                     continue
