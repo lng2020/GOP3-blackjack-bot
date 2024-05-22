@@ -16,7 +16,8 @@ python main.py
 - [x] Add i18n support(supported languages: English, Chinese)
 - [ ] Self-defined strategy
 - [ ] Adapt different resolutions
-- [ ] Better distinguish win/draw conditions
+- [x] Better distinguish win/draw conditions
+- [ ] Better spliting cards recognition
 
 ## Translation
 This is guide for translating the bot to other languages. If you want to contribute, please follow the steps below:
