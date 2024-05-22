@@ -121,8 +121,8 @@ class ProgramThread(QThread):
                 self.statUpdated.emit(amount_rate, "lose")
                 sleep(2)
             elif self.compare(bust, screen):
-                loc = self.compare(bust, screen)
-                if loc[1] < 500:
+                _, y = self.compare(bust, screen)
+                if y < WINDOW_HEIGHT / 2:
                     continue
                 amount_rate = 1
                 if is_doubled:
@@ -140,8 +140,8 @@ class ProgramThread(QThread):
                 self.statUpdated.emit(amount_rate, "draw")
                 sleep(2)
             elif self.compare(blackjack, screen):
-                loc = self.compare(blackjack, screen)
-                if loc[1] < 500:
+                _, y = self.compare(blackjack, screen)
+                if y < WINDOW_HEIGHT / 2:
                     continue
                 amount_rate = 1.5
                 is_doubled = False
@@ -155,13 +155,13 @@ class ProgramThread(QThread):
                 for card_name, card_image in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
                     loc = np_where(res >= 0.95)
-                    for pt in zip(*loc[::-1]):
+                    for x, y in zip(*loc[::-1]):
                         # magic number to determine the position of the card
-                        if pt[1] < 353:
+                        if y < WINDOW_HEIGHT / 2:
                             dealer_card = card_name
-                        elif pt[0] in [d1 for d2 in FIRST_HAND_POS for d1 in d2]:
+                        elif x in [d1 for d2 in FIRST_HAND_POS for d1 in d2]:
                             first_card = card_name
-                        elif pt[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]:
+                        elif x in [d3 for d4 in SECOND_HAND_POS for d3 in d4]:
                             second_card = card_name
                     if dealer_card and first_card and second_card:
                         break
@@ -204,21 +204,22 @@ class ProgramThread(QThread):
                 for card_name, card_image in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
                     loc = np_where(res >= 0.95)
-                    for pt in zip(*loc[::-1]):
+                    for x, y in zip(*loc[::-1]):
                         already_detected = False
                         for detected_card in detected_cards:
-                            if detected_card[0] == card_name and is_close(
-                                detected_card[1], pt
+                            detect_card_name, detect_card_pos = detected_card
+                            if detect_card_name == card_name and is_close(
+                                detect_card_pos, (x, y)
                             ):
                                 already_detected = True
                                 break
                         if not already_detected:
-                            if pt[1] < 353:
+                            if y < WINDOW_HEIGHT / 2:
                                 dealer_card = card_name
                             else:
                                 total_points += card_num_from_card_name(card_name)
-                            detected_cards.append((card_name, pt))
-                cards = [card[0] for card in detected_cards if card[0] != dealer_card]
+                            detected_cards.append((card_name, (x, y)))
+                cards = [name for name, pt in detected_cards if name != dealer_card]
                 if dealer_card == "" or total_points == 0 or len(cards) < 2:
                     continue
                 if total_points >= 21:
