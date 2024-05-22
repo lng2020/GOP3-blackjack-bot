@@ -3,3 +3,4 @@
 data.txt
 image/screen.png
 venv/
+__pycache__
