@@ -10,24 +10,21 @@ from constant import (
     COLOR,
     CHEAT_SHEET,
     OP_POS,
-    FIRST_HAND_POS,
-    SECOND_HAND_POS,
     WINDOW_WIDTH,
     WINDOW_HEIGHT,
     BUTTON_WIDTH,
     BUTTON_HEIGHT,
+    FIRST_HAND_X,
+    SECOND_HAND_X,
+    SPLIT_FIRST_GROUP_FIRST_HAND_X,
+    SPLIT_FIRST_GROUP_SECOND_HAND_X,
+    SPLIT_SECOND_GROUP_FIRST_HAND_X,
+    SPLIT_SECOND_GROUP_SECOND_HAND_X,
 )
 
 
 def is_close(pt1, pt2, threshold=8):
     return np_sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2) < threshold
-
-
-def clickz(top_left):
-    x = top_left[0] + BUTTON_WIDTH / 2
-    y = top_left[1] + BUTTON_HEIGHT / 2
-    pyautogui.click(x, y, button="left", duration=0.25)
-    pyautogui.moveTo(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, duration=0.25)
 
 
 def card_num_from_card_name(card_name):
@@ -86,9 +83,15 @@ class ProgramThread(QThread):
         _, val, _, loc = minMaxLoc(res)
         return loc if val >= 0.9 else None
 
+    def clickz(self, top_left):
+        x = top_left[0] + BUTTON_WIDTH / 2
+        y = top_left[1] + BUTTON_HEIGHT / 2
+        pyautogui.click(x, y, button="left", duration=0.25)
+        pyautogui.moveTo(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, duration=0.25)
+
     def run(self):
         is_doubled = False
-        is_split = False
+        split_round = 0
 
         win = imread(self.image_prefix + "win.png", 0)
         lose = imread(self.image_prefix + "lose.png", 0)
@@ -109,7 +112,7 @@ class ProgramThread(QThread):
                 if is_doubled:
                     amount_rate = 2
                 is_doubled = False
-                is_split = False
+                split_round = 0
                 self.statUpdated.emit(amount_rate, "win")
                 sleep(2)
             elif self.compare(lose, screen):
@@ -117,7 +120,7 @@ class ProgramThread(QThread):
                 if is_doubled:
                     amount_rate = 2
                 is_doubled = False
-                is_split = False
+                split_round = 0
                 self.statUpdated.emit(amount_rate, "lose")
                 sleep(2)
             elif self.compare(bust, screen):
@@ -128,7 +131,7 @@ class ProgramThread(QThread):
                 if is_doubled:
                     amount_rate = 2
                 is_doubled = False
-                is_split = False
+                split_round = 0
                 self.statUpdated.emit(amount_rate, "lose")
                 sleep(2)
             elif self.compare(draw, screen):
@@ -136,7 +139,7 @@ class ProgramThread(QThread):
                 if is_doubled:
                     amount_rate = 2
                 is_doubled = False
-                is_split = False
+                split_round = 0
                 self.statUpdated.emit(amount_rate, "draw")
                 sleep(2)
             elif self.compare(blackjack, screen):
@@ -145,10 +148,11 @@ class ProgramThread(QThread):
                     continue
                 amount_rate = 1.5
                 is_doubled = False
-                is_split = False
+                split_round = 0
                 self.statUpdated.emit(amount_rate, "win")
                 sleep(2)
             elif self.compare(double, screen):
+                # It's the first round
                 first_card = ""
                 second_card = ""
                 dealer_card = ""
@@ -156,13 +160,39 @@ class ProgramThread(QThread):
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
                     loc = np_where(res >= 0.95)
                     for x, y in zip(*loc[::-1]):
-                        # magic number to determine the position of the card
                         if y < WINDOW_HEIGHT / 2:
                             dealer_card = card_name
-                        elif x in [d1 for d2 in FIRST_HAND_POS for d1 in d2]:
-                            first_card = card_name
-                        elif x in [d3 for d4 in SECOND_HAND_POS for d3 in d4]:
-                            second_card = card_name
+                        else:
+                            if split_round:
+                                if split_round == 1:
+                                    first_minn_x, first_maxx_x = (
+                                        SPLIT_SECOND_GROUP_FIRST_HAND_X
+                                    )
+                                    second_minn_x, second_maxx_x = (
+                                        SPLIT_SECOND_GROUP_SECOND_HAND_X
+                                    )
+                                    if first_minn_x < x < first_maxx_x:
+                                        first_card = card_name
+                                    elif second_minn_x < x < second_maxx_x:
+                                        second_card = card_name
+                                elif split_round == 2:
+                                    first_minn_x, first_maxx_x = (
+                                        SPLIT_FIRST_GROUP_FIRST_HAND_X
+                                    )
+                                    second_minn_x, second_maxx_x = (
+                                        SPLIT_FIRST_GROUP_SECOND_HAND_X
+                                    )
+                                    if first_minn_x < x < first_maxx_x:
+                                        first_card = card_name
+                                    elif second_minn_x < x < second_maxx_x:
+                                        second_card = card_name
+                            else:
+                                first_minn_x, first_maxx_x = FIRST_HAND_X
+                                second_minn_x, second_maxx_x = SECOND_HAND_X
+                                if first_minn_x < x < first_maxx_x:
+                                    first_card = card_name
+                                elif second_minn_x < x < second_maxx_x:
+                                    second_card = card_name
                     if dealer_card and first_card and second_card:
                         break
                 if "" in [first_card, second_card, dealer_card]:
@@ -184,18 +214,28 @@ class ProgramThread(QThread):
                 ]
                 if strategy == "double":
                     is_doubled = True
-                if strategy == "split" and not is_split:
-                    is_split = True
-                elif strategy == "split" and is_split:
-                    # we can't split again
-                    if card_num1 + card_num2 < 12:
-                        strategy = "hit"
+                if strategy == "split":
+                    if split_round > 0:
+                        # we can't split again
+                        if card_num1 + card_num2 < 12:
+                            strategy = "hit"
+                        else:
+                            strategy = "stand"
+                        if split_round == 1:
+                            split_round = 2
+                        else:
+                            split_round = 0
                     else:
-                        strategy = "stand"
+                        split_round = 1
+                elif split_round == 1:
+                    split_round = 2
+                else:
+                    split_round = 0
+
                 self.roundInformUpdated.emit(
                     dealer_card, first_card + "," + second_card, strategy
                 )
-                clickz(OP_POS[strategy])
+                self.clickz(OP_POS[strategy])
             elif self.compare(stand, screen):
                 # which means it's the second round and could have mulitple cards
                 dealer_card = ""
@@ -243,10 +283,10 @@ class ProgramThread(QThread):
                 if strategy == "double":
                     strategy = "hit"
                 self.roundInformUpdated.emit(dealer_card, ",".join(cards), strategy)
-                clickz(OP_POS[strategy])
+                self.clickz(OP_POS[strategy])
             elif self.compare(bet, screen) is not None:
                 loc = self.compare(bet, screen)
-                clickz(loc)
+                self.clickz(loc)
 
     def stop(self):
         self.terminate()
