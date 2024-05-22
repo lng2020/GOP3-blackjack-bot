@@ -34,6 +34,16 @@ class App(QWidget):
         # Input Layout
         input_layout = QGridLayout()
 
+        self.system_config_label = QLabel("System Configuration")
+        self.system_config_label.setStyleSheet("font-weight: bold;")
+        self.resolution_label = QLabel("Resolution: ")
+        self.resolution_input = QComboBox()
+        self.resolution_input.addItems(["1920x1080", "1280x720", "800x600"])
+        self.language_label = QLabel("GOP3 Interface Language")
+        self.language_input = QComboBox()
+        for language in SUPPORTED_LANGUAGE:
+            self.language_input.addItem(language)
+        self.language_input.setFixedWidth(150)
         self.round_config_label = QLabel("Round Configuration")
         self.round_config_label.setStyleSheet("font-weight: bold;")
         self.bet_amount_label = QLabel("Bet Amount:")
@@ -60,12 +70,6 @@ class App(QWidget):
         )
         self.bet_amount_input.setFixedWidth(150)
 
-        self.language_label = QLabel("GOP3 Interface Language")
-        self.language_input = QComboBox()
-        for language in SUPPORTED_LANGUAGE:
-            self.language_input.addItem(language)
-        self.language_input.setFixedWidth(150)
-
         self.num_games_label = QLabel("Round Hands: ")
         self.num_games_input = QLineEdit()
         self.num_games_input.setText("1000")
@@ -86,17 +90,20 @@ class App(QWidget):
         self.stop_lose_input.setValidator(QIntValidator())
         self.stop_lose_input.setFixedWidth(150)
 
-        input_layout.addWidget(self.round_config_label, 0, 0, 1, 2)
-        input_layout.addWidget(self.bet_amount_label, 1, 0)
-        input_layout.addWidget(self.bet_amount_input, 1, 1)
-        input_layout.addWidget(self.language_label, 2, 0)
-        input_layout.addWidget(self.language_input, 2, 1)
-        input_layout.addWidget(self.num_games_label, 3, 0)
-        input_layout.addWidget(self.num_games_input, 3, 1)
-        input_layout.addWidget(self.stop_win_label, 4, 0)
-        input_layout.addWidget(self.stop_win_input, 4, 1)
-        input_layout.addWidget(self.stop_lose_label, 5, 0)
-        input_layout.addWidget(self.stop_lose_input, 5, 1)
+        input_layout.addWidget(self.system_config_label, 0, 0, 1, 2)
+        input_layout.addWidget(self.resolution_label, 1, 0)
+        input_layout.addWidget(self.resolution_input, 1, 1)
+        input_layout.addWidget(self.round_config_label, 2, 0, 1, 2)
+        input_layout.addWidget(self.bet_amount_label, 3, 0)
+        input_layout.addWidget(self.bet_amount_input, 3, 1)
+        input_layout.addWidget(self.language_label, 4, 0)
+        input_layout.addWidget(self.language_input, 4, 1)
+        input_layout.addWidget(self.num_games_label, 5, 0)
+        input_layout.addWidget(self.num_games_input, 5, 1)
+        input_layout.addWidget(self.stop_win_label, 6, 0)
+        input_layout.addWidget(self.stop_win_input, 6, 1)
+        input_layout.addWidget(self.stop_lose_label, 7, 0)
+        input_layout.addWidget(self.stop_lose_input, 7, 1)
 
         # Cheat Sheet Layout
         self.cheat_sheet_layout = QVBoxLayout()
@@ -108,7 +115,7 @@ class App(QWidget):
         )
         self.cheat_sheet_table.verticalHeader().setVisible(False)
         self.cheat_sheet_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.cheat_sheet_table.setFixedHeight(580)
+        self.cheat_sheet_table.setFixedHeight(500)
         self.cheat_sheet_table.setFixedWidth(540)
         self.cheat_sheet_table.setStyleSheet("border: 1px solid #ccc;")
         self.cheat_sheet_layout.addWidget(self.cheat_sheet_label)
@@ -153,7 +160,7 @@ class App(QWidget):
 
         # Statistics Layout
         self.statistics_layout = QGridLayout()
-        self.statistics_label = QLabel("Game Statistics")
+        self.statistics_label = QLabel("Round Statistics")
         self.statistics_label.setStyleSheet("font-weight: bold;")
         self.total_hand_label = QLabel("Total Hands: 0")
         self.total_win_label = QLabel("Total Wins: 0")
@@ -216,8 +223,6 @@ class App(QWidget):
         self.start_button.setChecked(False)
         self.stop_button.setChecked(False)
         self.update_button_styles()
-        self.net_win = 0
-        self.round_hand = 0
 
     def update_stat(self, bet_rate, condition):
         self.total_hand += 1
