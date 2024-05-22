@@ -1,21 +1,34 @@
+from time import sleep
 from numpy import where as np_where
 from numpy import sqrt as np_sqrt
 import pyautogui
 from pyscreeze import screenshot
 from cv2 import resize, matchTemplate, TM_CCOEFF_NORMED, imread, minMaxLoc
-from time import sleep
-import os
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from constant import NUMBER, COLOR, CHEAT_SHEET, OP_POS, FIRST_HAND_POS, SECOND_HAND_POS, WINDOW_WIDTH, WINDOW_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT
+from PyQt5.QtCore import QThread, pyqtSignal
+from constant import (
+    NUMBER,
+    COLOR,
+    CHEAT_SHEET,
+    OP_POS,
+    FIRST_HAND_POS,
+    SECOND_HAND_POS,
+    WINDOW_WIDTH,
+    WINDOW_HEIGHT,
+    BUTTON_WIDTH,
+    BUTTON_HEIGHT,
+)
+
 
 def is_close(pt1, pt2, threshold=8):
-    return np_sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2) < threshold
+    return np_sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2) < threshold
+
 
 def clickz(top_left):
     x = top_left[0] + BUTTON_WIDTH / 2
     y = top_left[1] + BUTTON_HEIGHT / 2
     pyautogui.click(x, y, button="left", duration=0.25)
-    pyautogui.moveTo(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, duration=0.25)
+    pyautogui.moveTo(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, duration=0.25)
+
 
 def card_num_from_card_name(card_name):
     if card_name[1] in ["t", "j", "q", "k"]:
@@ -25,6 +38,7 @@ def card_num_from_card_name(card_name):
     else:
         return int(card_name[1])
 
+
 def card_num_str_from_card_name(card_name):
     if card_name[1] in ["t", "j", "q", "k"]:
         return "10"
@@ -32,6 +46,7 @@ def card_num_str_from_card_name(card_name):
         return "A"
     else:
         return card_name[1]
+
 
 def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
     if card_num1 == card_num2:
@@ -46,7 +61,8 @@ def card_suite_from_two_card_num(card_num1: int, card_num2: int) -> str:
         else:
             return "A," + str(card_num1)
     else:
-        return str(card_num1+card_num2)
+        return str(card_num1 + card_num2)
+
 
 class ProgramThread(QThread):
     statUpdated = pyqtSignal(float, str)
@@ -91,7 +107,7 @@ class ProgramThread(QThread):
             if self.compare(win, screen):
                 amount_rate = 1
                 if is_doubled:
-                    amount_rate = 2 
+                    amount_rate = 2
                 is_doubled = False
                 is_split = False
                 self.statUpdated.emit(amount_rate, "win")
@@ -99,7 +115,7 @@ class ProgramThread(QThread):
             elif self.compare(lose, screen):
                 amount_rate = 1
                 if is_doubled:
-                    amount_rate = 2 
+                    amount_rate = 2
                 is_doubled = False
                 is_split = False
                 self.statUpdated.emit(amount_rate, "lose")
@@ -136,7 +152,7 @@ class ProgramThread(QThread):
                 first_card = ""
                 second_card = ""
                 dealer_card = ""
-                for (card_name, card_image) in self.card_images.items():
+                for card_name, card_image in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
                     loc = np_where(res >= 0.95)
                     for pt in zip(*loc[::-1]):
@@ -148,12 +164,16 @@ class ProgramThread(QThread):
                         elif pt[0] in [d3 for d4 in SECOND_HAND_POS for d3 in d4]:
                             second_card = card_name
                     if dealer_card and first_card and second_card:
-                            break
+                        break
                 if "" in [first_card, second_card, dealer_card]:
                     continue
-                card_num1, card_num2 = card_num_from_card_name(first_card), card_num_from_card_name(second_card)
+                card_num1, card_num2 = card_num_from_card_name(
+                    first_card
+                ), card_num_from_card_name(second_card)
                 if card_num1 + card_num2 == 21:
-                    self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, "stand")
+                    self.roundInformUpdated.emit(
+                        dealer_card, first_card + "," + second_card, "stand"
+                    )
                     continue
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
                 strategy = CHEAT_SHEET[
@@ -172,20 +192,24 @@ class ProgramThread(QThread):
                         strategy = "hit"
                     else:
                         strategy = "stand"
-                self.roundInformUpdated.emit(dealer_card, first_card + "," + second_card, strategy)
+                self.roundInformUpdated.emit(
+                    dealer_card, first_card + "," + second_card, strategy
+                )
                 clickz(OP_POS[strategy])
             elif self.compare(stand, screen):
                 # which means it's the second round and could have mulitple cards
                 dealer_card = ""
                 total_points = 0
                 detected_cards = []
-                for (card_name, card_image) in self.card_images.items():
+                for card_name, card_image in self.card_images.items():
                     res = matchTemplate(screen, card_image, TM_CCOEFF_NORMED)
                     loc = np_where(res >= 0.95)
                     for pt in zip(*loc[::-1]):
                         already_detected = False
                         for detected_card in detected_cards:
-                            if detected_card[0] == card_name and is_close(detected_card[1], pt):
+                            if detected_card[0] == card_name and is_close(
+                                detected_card[1], pt
+                            ):
                                 already_detected = True
                                 break
                         if not already_detected:
@@ -199,13 +223,15 @@ class ProgramThread(QThread):
                     continue
                 if total_points >= 21:
                     if total_points % 10 == 1:
-                        self.roundInformUpdated.emit(dealer_card, ",".join(cards), "stand")
+                        self.roundInformUpdated.emit(
+                            dealer_card, ",".join(cards), "stand"
+                        )
                         continue
                     elif total_points % 10 == 0:
                         total_points = 20
                     else:
                         total_points = total_points % 10 + 10
-                    
+
                 dealer_card_num_str = card_num_str_from_card_name(dealer_card)
                 strategy = CHEAT_SHEET[
                     (
@@ -220,7 +246,7 @@ class ProgramThread(QThread):
             elif self.compare(bet, screen) is not None:
                 loc = self.compare(bet, screen)
                 clickz(loc)
-            
+
     def stop(self):
         self.terminate()
         self.wait()
