@@ -1,5 +1,9 @@
 # GOP3 Blackjack Bot
-This is a simple blackjack bot for the game "Governor of Poker 3". It uses the `pyautogui` library to take screenshots and interact with the game. The bot is able to play blackjack automatically and can be configured to play in different ways.
+This is a simple blackjack bot for the game "Governor of Poker 3". 
+It uses `pyautogui` to take screenshots and click buttons, and `opencv` to recognize the cards and buttons.
+Then it uses a [strategy configuration cheatsheet](./assets/cheatsheet.png) to decide the next move.
+The `v2` tag is a quite stable version. From my serveral 1000 hands test, the expectation is around 0.99.
+The main branch is for more features and improvements but I don't think the expectation will change much.
 
 ![demo](./assets/demo.png)
 ## Usage
@@ -17,7 +21,11 @@ python main.py
 - [ ] Self-defined strategy
 - [ ] Adapt different resolutions
 - [x] Better distinguish win/draw conditions
-- [ ] Better spliting cards recognition
+- [x] Better spliting cards recognition
+
+## Known issues
+1. if this hand contains more than 5 cards, the bot will not recognize the cards correctly.
+2. the win/lose amount is not right after spliting cards.
 
 ## Translation
 This is guide for translating the bot to other languages. If you want to contribute, please follow the steps below:
