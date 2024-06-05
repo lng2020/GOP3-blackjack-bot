@@ -421,8 +421,9 @@ BUTTON_HEIGHT = 115
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
 
-SUPPORTED_LANGUAGE = ["English", "Chinese"]
+SUPPORTED_LANGUAGE = ["English", "Chinese", "Italiano"]
 LANGUAGE_MAP = {
     "English": "en-us",
     "Chinese": "zh-cn",
+    "Italiano": "it-IT",
 }
