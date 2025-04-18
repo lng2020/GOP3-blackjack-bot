@@ -6,6 +6,9 @@ It uses `pyautogui` to take screenshots and click buttons, and `opencv` to recog
 The `v2` tag is a quite stable version. From my several 10000 hand tests, the expectation is around 0.98. The main branch is for more features and improvements but the expectation will not change much.
 
 ![demo](./assets/demo.png)
+## Binary
+You can download the binary version and use it directly. The binary version is built with `pyinstaller` and contains all the dependencies. You can find the binary version in the GitHub release page.
+
 ## Usage
 1. Requirements in GOP3:
     - The game must be in fullscreen mode(1920*1080).
