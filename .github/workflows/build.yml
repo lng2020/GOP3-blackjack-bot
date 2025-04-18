@@ -1,9 +1,7 @@
 name: Build Executables
-
 on:
   push:
   workflow_dispatch:
-
 jobs:
   build:
     name: Build ${{ matrix.os }}
@@ -14,15 +12,14 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
         include:
           - os: windows-latest
-            output_name: app.exe
-            asset_name: app-windows.exe
+            output_name: GOP3bot.exe
+            asset_name: GOP3bot-windows.exe
           - os: macos-latest
-            output_name: app
-            asset_name: app-macos
+            output_name: GOP3bot
+            asset_name: GOP3bot-macos
           - os: ubuntu-latest
-            output_name: app
-            asset_name: app-linux
-
+            output_name: GOP3bot
+            asset_name: GOP3bot-linux
     steps:
     - uses: actions/checkout@v4
     
@@ -53,15 +50,15 @@ jobs:
       
     - name: Build executable (Windows)
       if: matrix.os == 'windows-latest'
-      run: pyinstaller --onefile --windowed --name=app main.py
+      run: pyinstaller --onefile --windowed --name=GOP3bot main.py
       
     - name: Build executable (macOS)
       if: matrix.os == 'macos-latest'
-      run: pyinstaller --onefile --windowed --name=app main.py
+      run: pyinstaller --onefile --windowed --name=GOP3bot main.py
       
     - name: Build executable (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: pyinstaller --onefile --name=app main.py
+      run: pyinstaller --onefile --name=GOP3bot main.py
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
