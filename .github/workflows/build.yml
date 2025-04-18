@@ -56,7 +56,7 @@ jobs:
       
     - name: Build executable (Windows)
       if: matrix.os == 'windows-latest'
-      run: pyinstaller --onefile --windowed --icon=icon.ico --name=app main.py
+      run: pyinstaller --onefile --windowed --name=app main.py
       
     - name: Build executable (macOS)
       if: matrix.os == 'macos-latest'
