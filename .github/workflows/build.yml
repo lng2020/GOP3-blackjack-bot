@@ -27,7 +27,7 @@ jobs:
             asset_name: app-linux
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -67,7 +67,7 @@ jobs:
       run: pyinstaller --onefile --name=app main.py
       
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: dist/${{ matrix.output_name }}
