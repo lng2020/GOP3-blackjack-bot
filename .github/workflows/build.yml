@@ -71,6 +71,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
+        name: GOP3bot-${{ matrix.platform_name }}-v${{ env.VERSION }}${{ matrix.extension }}
         path: dist/GOP3bot-${{ matrix.platform_name }}-v${{ env.VERSION }}${{ matrix.extension }}
         
     - name: Create Release
