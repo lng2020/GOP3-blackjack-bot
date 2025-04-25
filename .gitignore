@@ -4,3 +4,6 @@ data.txt
 image/screen.png
 venv/
 __pycache__
+build/
+dist/
+main.spec
