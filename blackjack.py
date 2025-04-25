@@ -2,9 +2,9 @@ from time import sleep
 from numpy import where as np_where
 from numpy import sqrt as np_sqrt
 import pyautogui
-from pyscreeze import screenshot
-from cv2 import resize, matchTemplate, TM_CCOEFF_NORMED, imread, minMaxLoc
+from cv2 import resize, matchTemplate, TM_CCOEFF_NORMED, minMaxLoc
 from PyQt5.QtCore import QThread, pyqtSignal
+from utils import safe_imread, safe_screenshot
 from constant import (
     NUMBER,
     COLOR,
@@ -75,7 +75,7 @@ class ProgramThread(QThread):
         for num in NUMBER:
             for col in COLOR:
                 card_name = col + num
-                card_image = imread(r"image/card/" + card_name + ".png", 0)
+                card_image = safe_imread(r"image/card/" + card_name + ".png", 0)
                 self.card_images[card_name] = card_image
 
     def compare(self, target, screen):
@@ -93,18 +93,18 @@ class ProgramThread(QThread):
         is_doubled = False
         split_round = 0
 
-        win = imread(self.image_prefix + "win.png", 0)
-        lose = imread(self.image_prefix + "lose.png", 0)
-        bust = imread(self.image_prefix + "bust.png", 0)
-        draw = imread(self.image_prefix + "draw.png", 0)
-        double = imread(self.image_prefix + "double.png", 0)
-        stand = imread(self.image_prefix + "stand.png", 0)
-        blackjack = imread(self.image_prefix + "blackjack.png", 0)
-        bet = imread(r"image/bet/bet" + self.bet_amount + ".png", 0)
+        win = safe_imread(self.image_prefix + "win.png", 0)
+        lose = safe_imread(self.image_prefix + "lose.png", 0)
+        bust = safe_imread(self.image_prefix + "bust.png", 0)
+        draw = safe_imread(self.image_prefix + "draw.png", 0)
+        double = safe_imread(self.image_prefix + "double.png", 0)
+        stand = safe_imread(self.image_prefix + "stand.png", 0)
+        blackjack = safe_imread(self.image_prefix + "blackjack.png", 0)
+        bet = safe_imread(r"image/bet/bet" + self.bet_amount + ".png", 0)
 
         while self.running:
-            screenshot("image/screen.png")
-            screen = imread(r"image/screen.png", 0)
+            safe_screenshot("image/screen.png")
+            screen = safe_imread(r"image/screen.png", 0)
             screen = resize(screen, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
             if self.compare(win, screen):

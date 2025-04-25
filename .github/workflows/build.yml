@@ -1,6 +1,8 @@
 name: Build Executables
 on:
   push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 jobs:
   build:
@@ -12,14 +14,17 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
         include:
           - os: windows-latest
-            output_name: GOP3bot.exe
-            asset_name: GOP3bot-windows.exe
+            platform_name: windows
+            extension: .exe
+            path_separator: ";"
           - os: macos-latest
-            output_name: GOP3bot
-            asset_name: GOP3bot-macos
+            platform_name: macos
+            extension: ''
+            path_separator: ":"
           - os: ubuntu-latest
-            output_name: GOP3bot
-            asset_name: GOP3bot-linux
+            platform_name: linux
+            extension: ''
+            path_separator: ":"
     steps:
     - uses: actions/checkout@v4
     
@@ -27,6 +32,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
+        
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+      shell: bash
         
     - name: Install dependencies (Windows & macOS)
       if: matrix.os != 'ubuntu-latest'
@@ -48,28 +58,25 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install upx
       
-    - name: Build executable (Windows)
-      if: matrix.os == 'windows-latest'
-      run: pyinstaller --onefile --windowed --name=GOP3bot main.py
-      
-    - name: Build executable (macOS)
-      if: matrix.os == 'macos-latest'
-      run: pyinstaller --onefile --windowed --name=GOP3bot main.py
-      
-    - name: Build executable (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: pyinstaller --onefile --name=GOP3bot main.py
-      
+    - name: Build executable
+      run: >
+        pyinstaller
+        --onefile
+        ${{ matrix.os != 'ubuntu-latest' && '--windowed' || '' }}
+        --add-data="image${{ matrix.path_separator }}image"
+        --name="GOP3bot-${{ matrix.platform_name }}-v${{ env.VERSION }}${{ matrix.extension }}"
+        main.py
+      shell: bash
+        
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.asset_name }}
-        path: dist/${{ matrix.output_name }}
+        path: dist/GOP3bot-${{ matrix.platform_name }}-v${{ env.VERSION }}${{ matrix.extension }}
         
     - name: Create Release
       if: github.ref_type == 'tag'
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/${{ matrix.output_name }}
+        files: dist/GOP3bot-${{ matrix.platform_name }}-v${{ matrix.extension }}${{ env.VERSION }}${{ matrix.extension }}
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
