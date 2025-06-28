@@ -1,3 +1,7 @@
+# If You Want to Buy Chips
+
+contact me at t.me/dumbass2002
+
 # GOP3 Blackjack Bot
 This is a simple blackjack bot for the game "Governor of Poker 3". 
 
